@@ -86,6 +86,20 @@
       <button id="next" title="Día siguiente">›</button>
     </div>
 
+    <section id="puesta" class="puesta" hidden>
+      <div class="puesta-head"><h3>Puesta en marcha</h3><span id="puesta-prog" class="prog">0/3</span></div>
+      <ul class="checklist">
+        <li data-step="firstEntry"><span class="tick">○</span> Escribe tu primera entrada</li>
+        <li data-step="installed"><span class="tick">○</span> Instálala como aplicación</li>
+        <li data-step="exported"><span class="tick">○</span> Exporta una copia (tu seguro)</li>
+      </ul>
+      <div class="puesta-foot">
+        <button id="puesta-install" hidden>Instalar</button>
+        <button id="puesta-export">Exportar copia</button>
+        <button id="puesta-x" class="linkish">ocultar</button>
+      </div>
+    </section>
+
     <section>
       <h3>Hoy</h3>
       <p class="hint">¿Qué tienes hoy?</p>
@@ -165,6 +179,17 @@
     </div>
     <small class="muted foot-note"><span id="estado">Guardado localmente</span> · El servidor solo entrega esta página: no guarda nada tuyo.</small>
   </footer>
+
+  <dialog id="onboarding" class="acerca">
+    <h2>Tu agenda, lista para escribir</h2>
+    <p>Sin registro y sin cuentas. Todo lo que escribas se guarda <strong>en este navegador</strong>, no en un servidor.</p>
+    <ul class="onboard-list">
+      <li><strong>Escribe</strong> tus tareas, citas, notas, ideas y diario del día.</li>
+      <li><strong>Instálala</strong> (opcional) para abrirla como una app y sin conexión.</li>
+      <li><strong>Exporta</strong> una copia de vez en cuando: es tu red de seguridad.</li>
+    </ul>
+    <form method="dialog"><button id="onboard-go" class="primary">Empezar a escribir</button></form>
+  </dialog>
 
   <dialog id="acerca" class="acerca">
     <h2>Acerca de esta agenda</h2>

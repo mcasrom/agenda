@@ -145,6 +145,22 @@ input[type="search"] {
   color: var(--ink);
 }
 
+/* Funnel: puesta en marcha */
+.puesta { border-left: 3px solid var(--accent); }
+.puesta-head { display: flex; align-items: baseline; justify-content: space-between; }
+.puesta-head h3 { margin: 0; }
+.prog { color: var(--accent); font-size: .8rem; font-weight: 700; }
+.checklist { list-style: none; margin: 8px 0; padding: 0; }
+.checklist li { display: flex; align-items: center; gap: 8px; padding: 4px 0; border: 0; color: var(--ink); }
+.checklist .tick { color: var(--muted); width: 1.1em; }
+.checklist li.done { color: var(--muted); }
+.checklist li.done .tick { color: var(--accent); }
+.checklist li.done { text-decoration: line-through; }
+.puesta-foot { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 6px; }
+.onboard-list { margin: 0 0 14px; padding-left: 18px; }
+.onboard-list li { margin: 4px 0; }
+
+
 /* Calendario */
 .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .cal { width: 100%; border-collapse: collapse; table-layout: fixed; }

@@ -14,6 +14,15 @@ let calY, calM;
 let day = null;
 let deferredPrompt = null;
 const settings = loadSettings();
+const funnel = loadFunnel();
+
+function loadFunnel() {
+  const def = { onboarded: false, firstEntry: false, installed: false, exported: false, hidden: false };
+  try { return Object.assign(def, JSON.parse(localStorage.getItem('agenda-funnel') || '{}')); }
+  catch { return def; }
+}
+function saveFunnel() { localStorage.setItem('agenda-funnel', JSON.stringify(funnel)); }
+function markStep(k) { if (!funnel[k]) { funnel[k] = true; saveFunnel(); renderPuesta(); } }
 
 function loadSettings() {
   const def = { dark: false, firstDay: 1 };
@@ -27,7 +36,33 @@ async function init() {
   applySettings();
   wire();
   await showDay(cur);
+  renderPuesta();
+  maybeOnboard();
   registerSW();
+}
+
+function maybeOnboard() {
+  if (funnel.onboarded) return;
+  const d = $('#onboarding');
+  if (!d) return;
+  if (typeof d.showModal === 'function') d.showModal(); else d.setAttribute('open', '');
+  const go = $('#onboard-go');
+  if (go) go.onclick = () => { funnel.onboarded = true; saveFunnel(); setTimeout(() => { const n = $('#notas'); if (n) n.focus(); }, 50); };
+}
+
+function renderPuesta() {
+  const el = $('#puesta');
+  if (!el) return;
+  const steps = ['firstEntry', 'installed', 'exported'];
+  const done = steps.filter(s => funnel[s]).length;
+  const p = $('#puesta-prog'); if (p) p.textContent = done + '/3';
+  el.querySelectorAll('.checklist li').forEach(li => {
+    const s = li.dataset.step;
+    li.classList.toggle('done', !!funnel[s]);
+    const t = li.querySelector('.tick'); if (t) t.textContent = funnel[s] ? '●' : '○';
+  });
+  const pi = $('#puesta-install'); if (pi) pi.hidden = !!funnel.installed || !deferredPrompt;
+  el.hidden = !!funnel.hidden;
 }
 
 function registerSW() {
@@ -56,11 +91,13 @@ function wire() {
 
   $('#q').addEventListener('input', runSearch);
 
-  $('#exp-json').onclick = async () => download('agenda-' + todayISO() + '.json', toJSON(await allDays()), 'application/json;charset=utf-8');
-  $('#exp-md').onclick = async () => download('agenda-' + todayISO() + '.md', toMarkdown(await allDays()), 'text/markdown;charset=utf-8');
-  $('#exp-org').onclick = async () => download('agenda-' + todayISO() + '.org', toOrg(await allDays()), 'text/plain;charset=utf-8');
+  $('#exp-json').onclick = exportJSON;
+  $('#exp-md').onclick = () => exportText('md');
+  $('#exp-org').onclick = () => exportText('org');
   $('#imp-json').onchange = importFile;
   $('#del-all').onclick = deleteAll;
+  const px = $('#puesta-x'); if (px) px.onclick = () => { funnel.hidden = true; saveFunnel(); renderPuesta(); };
+  const pe = $('#puesta-export'); if (pe) pe.onclick = exportJSON;
   $('#set-dark').onchange = (e) => { settings.dark = e.target.checked; saveSettings(); applySettings(); };
   $('#set-firstday').onchange = (e) => { settings.firstDay = Number(e.target.value); saveSettings(); };
 
@@ -140,14 +177,25 @@ async function addTarea() {
   const v = (prompt('Nueva tarea') || '').trim();
   if (!v) return;
   day.tasks.push({ text: v, done: false });
-  await putDay(day); renderDay(); flash('Guardado localmente');
+  await putDay(day); renderDay(); markStep('firstEntry'); flash('Guardado localmente');
 }
 async function addCita() {
   const h = (prompt('Hora (HH:MM), opcional') || '').trim();
   const t = (prompt('Cita') || '').trim();
   if (!t) return;
   day.citas.push({ h, t });
-  await putDay(day); renderDay(); flash('Guardado localmente');
+  await putDay(day); renderDay(); markStep('firstEntry'); flash('Guardado localmente');
+}
+
+async function exportJSON() {
+  download('agenda-' + todayISO() + '.json', toJSON(await allDays()), 'application/json;charset=utf-8');
+  markStep('exported');
+}
+async function exportText(kind) {
+  const days = await allDays();
+  if (kind === 'md') download('agenda-' + todayISO() + '.md', toMarkdown(days), 'text/markdown;charset=utf-8');
+  else download('agenda-' + todayISO() + '.org', toOrg(days), 'text/plain;charset=utf-8');
+  markStep('exported');
 }
 
 let saveTimer = null;
@@ -159,6 +207,7 @@ function scheduleSave() {
     day.ideas = $('#ideas').value;
     day.diario = $('#diario').value;
     await putDay(day);
+    if (day.notas || day.ideas || day.diario) markStep('firstEntry');
     flash('Guardado localmente');
   }, 400);
 }
@@ -224,20 +273,25 @@ async function deleteAll() {
 
 function wireInstall() {
   const btn = $('#btn-install');
-  if (!btn) return;
+  const pbtn = $('#puesta-install');
+  const trigger = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    try { const c = await deferredPrompt.userChoice; if (c && c.outcome === 'accepted') markStep('installed'); } catch { /* sin acción */ }
+    deferredPrompt = null;
+    if (btn) btn.hidden = true;
+    renderPuesta();
+  };
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    btn.hidden = false;
+    if (btn) btn.hidden = false;
+    renderPuesta();
   });
-  window.addEventListener('appinstalled', () => { btn.hidden = true; deferredPrompt = null; });
-  btn.onclick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    try { await deferredPrompt.userChoice; } catch { /* sin acción */ }
-    deferredPrompt = null;
-    btn.hidden = true;
-  };
+  window.addEventListener('appinstalled', () => { markStep('installed'); if (btn) btn.hidden = true; });
+  if (btn) btn.onclick = trigger;
+  if (pbtn) pbtn.onclick = trigger;
+  if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) markStep('installed');
 }
 
 function openAcerca() {
