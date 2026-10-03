@@ -1,4 +1,4 @@
-export const VERSION = '0.1.2';
+export const VERSION = '0.1.3';
 export const APP_URL = 'https://agenda.pruebapublica.com/';
 export const KOFI_URL = 'https://ko-fi.com/m_castillo';
 export const REPO_URL = 'https://github.com/mcasrom/agenda';
