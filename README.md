@@ -51,6 +51,8 @@ No hay analítica en el cliente. El uso del microservicio se aprecia **solo serv
 - **Atribución** por *referrer*/*UTM*: la tarjeta de <https://www.pruebapublica.com> enlaza con
   `?utm_source=pruebapublica&utm_medium=card&utm_campaign=agenda`.
 - **Indexación**: `robots.txt` + `sitemap.xml` + IndexNow + Search Console.
+  La propiedad `agenda.pruebapublica.com` quedó **verificada por etiqueta HTML** (3-oct-2026) y se
+  envió el sitemap; IndexNow avisó a Bing/Yandex.
 
 > El uso **dentro** de la app (qué se escribe, cuántos días, etc.) **no se mide por diseño**:
 > contradiría la promesa de privacidad. Lo que no sale del navegador, no se puede medir.
