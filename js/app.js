@@ -12,6 +12,7 @@ let cur = new Date();
 let view = 'day';
 let calY, calM;
 let day = null;
+let deferredPrompt = null;
 const settings = loadSettings();
 
 function loadSettings() {
@@ -66,6 +67,7 @@ function wire() {
   $('#btn-acerca').onclick = openAcerca;
   $('#btn-acerca-2').onclick = openAcerca;
   $('#btn-share').onclick = share;
+  wireInstall();
   initFooter();
 
   document.addEventListener('keydown', (e) => {
@@ -218,6 +220,24 @@ async function deleteAll() {
   await clearAll();
   alert('Datos borrados.');
   go(new Date());
+}
+
+function wireInstall() {
+  const btn = $('#btn-install');
+  if (!btn) return;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    btn.hidden = false;
+  });
+  window.addEventListener('appinstalled', () => { btn.hidden = true; deferredPrompt = null; });
+  btn.onclick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    try { await deferredPrompt.userChoice; } catch { /* sin acción */ }
+    deferredPrompt = null;
+    btn.hidden = true;
+  };
 }
 
 function openAcerca() {
