@@ -7,7 +7,7 @@ escribir notas e ideas, y guardar un diario. **Los datos se quedan en el navegad
 > Tareas, notas, ideas, diario y búsquedas **no se envían a ningún servidor** en la V0.1.
 
 - **En producción**: <https://agenda.pruebapublica.com>
-- **Versión**: `0.1.0`
+- **Versión**: `0.1.1`
 - **Código**: <https://github.com/mcasrom/agenda> (privado)
 
 ## Qué es
@@ -21,12 +21,19 @@ escribir notas e ideas, y guardar un diario. **Los datos se quedan en el navegad
 
 ## Privacidad y riesgo (leer)
 
-- El **servidor solo entrega los archivos** de la página. **No guarda nada tuyo**: ni tareas,
+- El **servidor solo entrega los archivos** de la página. **No guarda tu contenido**: ni tareas,
   ni notas, ni diario, ni búsquedas. No hay cuenta ni registro.
+- Al abrir la página, el servidor anota la **petición** (IP, fecha, agente) en sus *logs de acceso*
+  por seguridad y estadística agregada, con retención limitada. Se explica en la propia app
+  (*Acerca de → Qué registra el servidor*).
 - Tus datos se guardan en el **almacenamiento local del navegador** (IndexedDB), en tu dispositivo.
+  Al primer uso se pide **almacenamiento persistente** (`navigator.storage.persist()`) para que el
+  navegador no lo purgue por poco espacio.
 - Por eso **puedes perderlos**: si borras los datos del sitio, usas el modo privado, cambias de
-  navegador o de dispositivo, o se daña el almacenamiento. **Exporta una copia** (JSON/Markdown/Org)
-  de vez en cuando y guárdala en otro sitio.
+  navegador o de dispositivo, o se daña el almacenamiento. La app muestra **«Copia: hace N días»**
+  y avisa si llevas mucho sin exportar. **Exporta una copia** (JSON/Markdown/Org) y guárdala aparte.
+- La **importación** valida el esquema (`schemaVersion`) y sanea cada campo (solo tipos esperados;
+  el contenido se pinta como texto, nunca como HTML) — un fichero malicioso no ejecuta código.
 - No hay publicidad, rastreadores ni analítica. Si te resulta útil, puedes
   [invitarme a un café](https://ko-fi.com/m_castillo).
 
