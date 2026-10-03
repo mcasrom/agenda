@@ -7,7 +7,7 @@ escribir notas e ideas, y guardar un diario. **Los datos se quedan en el navegad
 > Tareas, notas, ideas, diario y búsquedas **no se envían a ningún servidor** en la V0.1.
 
 - **En producción**: <https://agenda.pruebapublica.com>
-- **Versión**: `0.1.1`
+- **Versión**: `0.1.4`
 - **Código**: <https://github.com/mcasrom/agenda> (privado)
 
 ## Qué es
@@ -130,11 +130,16 @@ Un registro por día en el almacén `days` de IndexedDB (clave `date`, ISO `YYYY
 
 - **Exportar JSON** guarda todo el contenido en un archivo.
 - **Importar JSON** lo restaura (útil si se borran los datos del sitio).
-- Exportar **Markdown** / **Org** sirve para leer o llevar el contenido a otros
-  programas (por ejemplo, Emacs Org-mode).
+- Exportar **Markdown** / **Org** / **.ics** sirve para leer, llevar el contenido a otros
+  programas (Emacs Org-mode) o a los avisos nativos del calendario.
+- **Copias rotativas internas**: la app guarda **las últimas 10 copias** dentro del navegador
+  (una automática al día, y antes de importar o borrar todo), con **«Restaurar»** en
+  *Configuración → Copias de seguridad*.
+- **Deshacer**: al eliminar una tarea o cita aparece un aviso **«Deshacer»** unos segundos.
 
 Los datos dependen del navegador: si se borran los datos del sitio, se pierden.
-Exportar una copia periódicamente es la única red de seguridad.
+Exportar una copia periódicamente (y el indicador «Copia: hace N días») sigue siendo la
+red de seguridad frente a perder el navegador entero.
 
 ## Despliegue
 

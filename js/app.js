@@ -1,4 +1,4 @@
-import { open, getDay, putDay, allDays, allKeys, clearAll, emptyDay } from './db.js';
+import { open, getDay, putDay, allDays, allKeys, clearAll, emptyDay, putBackup, allBackups, deleteBackup, replaceDays } from './db.js';
 import { iso, fromISO, addDays, todayISO, fmtLong } from './date.js';
 import { renderMonth } from './calendar.js';
 import { searchAll } from './search.js';
@@ -41,7 +41,83 @@ async function init() {
   requestPersist();
   maybeOnboard();
   registerSW();
+  maybeAutoBackup();
 }
+
+const MAX_BACKUPS = 10;
+
+async function makeBackup() {
+  const days = await allDays();
+  if (!days.length) return null;
+  const ts = Date.now();
+  await putBackup(ts, days);
+  const list = await allBackups();
+  for (const b of list.slice(MAX_BACKUPS)) await deleteBackup(b.ts);
+  return ts;
+}
+
+async function maybeAutoBackup() {
+  const days = await allDays();
+  if (!days.length) return;
+  const list = await allBackups();
+  const last = list[0];
+  if (last && new Date(last.ts).toISOString().slice(0, 10) === todayISO()) return;
+  await makeBackup();
+}
+
+function fmtTs(ts) {
+  return new Date(ts).toLocaleString('es-ES', {
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+}
+
+async function renderBackups() {
+  const box = $('#bk-list');
+  if (!box) return;
+  const list = await allBackups();
+  if (!list.length) { box.innerHTML = '<p class="muted">Aún no hay copias.</p>'; return; }
+  box.innerHTML = '';
+  for (const b of list) {
+    const nd = (b.data || []).length;
+    const row = document.createElement('div');
+    row.className = 'bk-row';
+    const span = document.createElement('span');
+    span.textContent = fmtTs(b.ts) + ' · ' + nd + (nd === 1 ? ' día' : ' días');
+    const rb = document.createElement('button');
+    rb.textContent = 'Restaurar'; rb.className = 'linkish';
+    rb.onclick = () => restoreBackup(b.ts);
+    const db2 = document.createElement('button');
+    db2.textContent = 'Eliminar'; db2.className = 'linkish';
+    db2.onclick = async () => { if (confirm('¿Eliminar esta copia?')) { await deleteBackup(b.ts); renderBackups(); } };
+    row.append(span, rb, db2);
+    box.appendChild(row);
+  }
+}
+
+async function restoreBackup(ts) {
+  const list = await allBackups();
+  const b = list.find((x) => x.ts === ts);
+  if (!b) return;
+  if (!confirm('¿Restaurar esta copia? Se reemplazará el contenido actual. (Antes se guarda una copia del estado actual.)')) return;
+  await makeBackup();
+  await replaceDays(b.data || []);
+  alert('Copia restaurada.');
+  await showDay(cur);
+  await renderBackups();
+}
+
+function showToast(msg, onUndo) {
+  const t = $('#toast');
+  if (!t) return;
+  $('#toast-txt').textContent = msg;
+  const b = $('#toast-undo');
+  b.hidden = !onUndo;
+  b.onclick = () => { if (onUndo) onUndo(); hideToast(); };
+  t.hidden = false;
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(hideToast, 6000);
+}
+function hideToast() { const t = $('#toast'); if (t) t.hidden = true; }
 
 async function requestPersist() {
   try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); }
@@ -128,6 +204,7 @@ function wire() {
   $('#del-all').onclick = deleteAll;
   const px = $('#puesta-x'); if (px) px.onclick = () => { funnel.hidden = true; saveFunnel(); renderPuesta(); };
   const pe = $('#puesta-export'); if (pe) pe.onclick = exportJSON;
+  const bkn = $('#bk-now'); if (bkn) bkn.onclick = async () => { await makeBackup(); await renderBackups(); flash('Copia creada'); };
   $('#set-dark').onchange = (e) => { settings.dark = e.target.checked; saveSettings(); applySettings(); };
   $('#set-firstday').onchange = (e) => { settings.firstDay = Number(e.target.value); saveSettings(); };
 
@@ -156,7 +233,7 @@ function setView(v) {
   $('#vista-cfg').hidden = v !== 'cfg';
   if (v === 'month') renderCal();
   if (v === 'search') $('#q').focus();
-  if (v === 'cfg') syncCfg();
+  if (v === 'cfg') { syncCfg(); renderBackups(); }
 }
 
 function go(d) {
@@ -199,7 +276,12 @@ function renderList(sel, arr, label, checkable) {
     const del = document.createElement('button');
     del.textContent = '×';
     del.title = 'Eliminar';
-    del.onclick = async () => { arr.splice(i, 1); await putDay(touch(day)); renderDay(); };
+    del.onclick = async () => {
+      const [item] = arr.splice(i, 1);
+      await putDay(touch(day));
+      renderDay();
+      showToast('Eliminado', async () => { arr.splice(i, 0, item); await putDay(touch(day)); renderDay(); });
+    };
     li.appendChild(del);
     ul.appendChild(li);
   });
@@ -291,6 +373,7 @@ async function importFile(e) {
   if (!file) return;
   try {
     const days = parseImport(await file.text());
+    await makeBackup();        // copia de seguridad antes de importar
     for (const d of days) {
       await putDay(touch(Object.assign(emptyDay(d.date), d)));
     }
@@ -304,8 +387,9 @@ async function importFile(e) {
 
 async function deleteAll() {
   if (!confirm('¿Seguro que quieres borrar todos los datos de esta agenda?\n\nEsta acción no puede deshacerse.')) return;
+  await makeBackup();          // guarda una copia antes de borrar (recuperable)
   await clearAll();
-  alert('Datos borrados.');
+  alert('Datos borrados. (Hay una copia en Configuración → Copias de seguridad.)');
   go(new Date());
 }
 

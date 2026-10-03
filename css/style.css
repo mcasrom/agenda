@@ -248,3 +248,17 @@ input[type="search"] {
 
 /* aviso de copia pendiente */
 .linkish.warn { color: var(--danger); }
+
+/* copias de seguridad */
+.bk-list { margin-top: 8px; display: grid; gap: 4px; }
+.bk-row { display: flex; align-items: center; gap: 8px; font-size: .85rem; }
+.bk-row span { flex: 1; color: var(--muted); }
+
+/* toast (deshacer) */
+.toast {
+  position: fixed; left: 50%; bottom: 70px; transform: translateX(-50%);
+  background: var(--ink); color: var(--paper); padding: 8px 14px; border-radius: 8px;
+  display: flex; gap: 10px; align-items: center; z-index: 50;
+  box-shadow: 0 4px 16px rgba(0,0,0,.25);
+}
+.toast .linkish { color: #fff; }
