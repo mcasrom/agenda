@@ -3,6 +3,7 @@ import { iso, fromISO, addDays, todayISO, fmtLong } from './date.js';
 import { renderMonth } from './calendar.js';
 import { searchAll } from './search.js';
 import { toJSON, toMarkdown, toOrg, toICS, download, parseAuto } from './export.js';
+import { encryptText, decryptText, isEncrypted } from './crypto.js';
 import { VERSION, APP_URL, KOFI_URL, REPO_URL, LICENSE } from './version.js';
 
 const $ = (s) => document.querySelector(s);
@@ -262,6 +263,7 @@ function wire() {
   $('#exp-md').onclick = () => exportText('md');
   $('#exp-org').onclick = () => exportText('org');
   $('#exp-ics').onclick = exportICS;
+  $('#exp-enc').onclick = exportEncrypted;
   $('#imp-json').onchange = importFile;
   const im = $('#imp-merge'); if (im) im.onclick = () => { const d = $('#imp-dlg'); if (d && d.close) d.close(); doImport('merge'); };
   const ir = $('#imp-replace'); if (ir) ir.onclick = () => { const d = $('#imp-dlg'); if (d && d.close) d.close(); doImport('replace'); };
@@ -387,6 +389,20 @@ async function exportICS() {
   markStep('exported');
   funnel.lastExport = new Date().toISOString(); saveFunnel(); renderCopia();
 }
+async function exportEncrypted() {
+  const p1 = prompt('Contraseña para cifrar la copia (no se guarda en ningún sitio):');
+  if (!p1) return;
+  const p2 = prompt('Repite la contraseña:');
+  if (p1 !== p2) { alert('Las contraseñas no coinciden.'); return; }
+  try {
+    const env = await encryptText(toJSON(await allDays()), p1);
+    download('agenda-' + todayISO() + '.agenda.enc', env, 'application/json;charset=utf-8');
+    markStep('exported');
+    funnel.lastExport = new Date().toISOString(); saveFunnel(); renderCopia();
+  } catch (e) {
+    alert('No se pudo cifrar: ' + e.message);
+  }
+}
 
 let saveTimer = null;
 let dirty = false;
@@ -451,7 +467,13 @@ async function importFile(e) {
   e.target.value = '';
   if (!file) return;
   try {
-    const days = parseAuto(await file.text(), file.name);
+    let text = await file.text();
+    if (isEncrypted(text)) {
+      const pass = prompt('Este fichero está cifrado. Escribe la contraseña:');
+      if (pass === null) return;
+      text = await decryptText(text, pass);
+    }
+    const days = parseAuto(text, file.name);
     if (!days.length) throw new Error('no contiene días válidos');
     pendingImport = days;
     const info = $('#imp-info');

@@ -1,4 +1,4 @@
-const CACHE = 'agenda-v0.1.12';
+const CACHE = 'agenda-v0.1.13';
 const ASSETS = [
   './',
   './index.html',
@@ -10,6 +10,7 @@ const ASSETS = [
   './js/search.js',
   './js/export.js',
   './js/version.js',
+  './js/crypto.js',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',

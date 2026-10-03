@@ -8,7 +8,7 @@ Es una **PWA**: se instala como aplicación (Android/Chrome, iPhone/Safari) y **
 > Tareas, notas, ideas, diario y búsquedas **no se envían a ningún servidor** en la V0.1.
 
 - **En producción**: <https://agenda.pruebapublica.com>
-- **Versión**: `0.1.7`
+- **Versión**: `0.1.11`
 - **Código**: <https://github.com/mcasrom/agenda> (privado)
 
 ## Qué es
@@ -132,6 +132,8 @@ Un registro por día en el almacén `days` de IndexedDB (clave `date`, ISO `YYYY
 ## Copia de seguridad
 
 - **Exportar JSON** guarda todo el contenido en un archivo.
+- **Exportar cifrado (`.enc`)**: copia protegida con **contraseña** (**AES-GCM 256 + PBKDF2-SHA256**, WebCrypto).
+  La contraseña **no se guarda**; si la pierdes, ese fichero no se puede abrir (se importa pidiéndola).
 - **Importar** (JSON / Markdown / Org / .ics) lo restaura, o **fusiona** con lo que ya tienes
   (tareas/citas nuevas sin duplicar; rellena los campos vacíos) — elige *Fusionar* o *Reemplazar*.
 - Exportar **Markdown** / **Org** / **.ics** sirve para leer, llevar el contenido a otros
