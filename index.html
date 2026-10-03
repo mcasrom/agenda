@@ -3,12 +3,58 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Agenda</title>
-  <meta name="description" content="Agenda personal local-first: tus datos viven en tu navegador.">
-  <meta name="theme-color" content="#f5f5f2">
+
+  <title>Agenda personal sin registro — tus datos se quedan en tu navegador</title>
+  <meta name="description" content="Agenda local-first para planificar el día, escribir notas, ideas y diario. Sin cuenta ni registro: todo se guarda en tu navegador y no se envía a ningún servidor. Exporta a JSON, Markdown y Org-mode. Funciona sin conexión.">
+  <meta name="app-version" content="0.1.0">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="color-scheme" content="light dark">
+  <link rel="canonical" href="https://agenda.viajeinteligencia.com/">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="css/style.css">
+
+  <!-- Open Graph / Twitter -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Agenda">
+  <meta property="og:locale" content="es_ES">
+  <meta property="og:url" content="https://agenda.viajeinteligencia.com/">
+  <meta property="og:title" content="Agenda personal sin registro — tus datos se quedan en tu navegador">
+  <meta property="og:description" content="Planifica el día, escribe notas, ideas y diario. Sin cuenta ni registro: todo se queda en tu navegador. Exporta a JSON, Markdown y Org-mode. Funciona sin conexión.">
+  <meta property="og:image" content="https://agenda.viajeinteligencia.com/icons/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Agenda personal sin registro">
+  <meta name="twitter:description" content="Planifica el día, escribe notas, ideas y diario. Todo se queda en tu navegador. Exporta a JSON, Markdown y Org-mode.">
+  <meta name="twitter:image" content="https://agenda.viajeinteligencia.com/icons/og.png">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Agenda",
+    "applicationCategory": "ProductivityApplication",
+    "operatingSystem": "Web (navegador)",
+    "inLanguage": "es",
+    "description": "Agenda personal local-first: planifica el día, escribe notas, ideas y diario. Sin registro; los datos se guardan en el navegador del usuario y no se envían a ningún servidor. Exporta a JSON, Markdown y Org-mode. Funciona sin conexión.",
+    "url": "https://agenda.viajeinteligencia.com/",
+    "isAccessibleForFree": true,
+    "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+    "softwareVersion": "0.1.0",
+    "featureList": [
+      "Vista de día con tareas, citas, notas, ideas y diario",
+      "Calendario mensual",
+      "Búsqueda local",
+      "Exportar e importar JSON, Markdown y Org-mode",
+      "Funciona sin conexión (PWA)",
+      "Los datos no salen del navegador"
+    ],
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+    "author": { "@type": "Person", "name": "Miguel Castillo", "url": "https://viajeinteligencia.com/" }
+  }
+  </script>
 </head>
 <body>
   <header class="top">
@@ -24,6 +70,11 @@
     </nav>
   </header>
 
+  <p class="tagline">
+    Sin registro ni cuenta · funciona sin conexión ·
+    <strong>tus datos se quedan en este dispositivo</strong>
+  </p>
+
   <main id="vista-dia">
     <div class="daybar">
       <button id="prev" title="Día anterior">‹</button>
@@ -32,6 +83,7 @@
 
     <section>
       <h3>Hoy</h3>
+      <p class="hint">¿Qué tienes hoy?</p>
       <ul id="tareas"></ul>
       <button id="add-tarea">+ tarea</button>
     </section>
@@ -56,6 +108,12 @@
       <h3>Diario</h3>
       <textarea id="diario" rows="5" placeholder="Hoy he…"></textarea>
     </section>
+
+    <p class="cta-privacidad">
+      Tus datos <strong>no se envían a ningún servidor</strong>: viven en este navegador.
+      Exporta una copia de vez en cuando para no perderlos.
+      <button id="btn-acerca-2" class="linkish">Más información</button>
+    </p>
   </main>
 
   <main id="vista-mes" hidden></main>
@@ -82,7 +140,9 @@
         <button id="exp-md">Exportar Markdown</button>
         <button id="exp-org">Exportar Org</button></div>
       <div class="row"><label class="filebtn">Importar JSON<input type="file" id="imp-json" accept="application/json,.json" hidden></label></div>
-      <p class="muted">Tus datos se guardan en este dispositivo. Exporta una copia periódicamente para conservarlos.</p>
+      <p class="muted">Tus datos se guardan en este dispositivo (almacenamiento local del navegador).
+        Si borras los datos del sitio, cambias de navegador o de dispositivo, <strong>se pierden</strong>.
+        Exporta una copia periódicamente para conservarlos.</p>
     </section>
     <section>
       <button id="del-all" class="danger">Borrar todos los datos</button>
@@ -90,9 +150,46 @@
   </main>
 
   <footer class="foot">
-    <small id="estado">Guardado localmente</small>
-    <small class="muted"> · Tus datos no salen de este navegador.</small>
+    <div class="foot-inner">
+      <span class="ver"><span id="ver-num">0.1.0</span> · software libre <span id="ver-lic">AGPL-3.0</span></span>
+      <span class="foot-actions">
+        <button id="btn-acerca" class="linkish">Acerca de</button>
+        <a class="kofi" href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer">☕ Apóyame</a>
+        <button id="btn-share">Compartir</button>
+      </span>
+    </div>
+    <small class="muted foot-note"><span id="estado">Guardado localmente</span> · El servidor solo entrega esta página: no guarda nada tuyo.</small>
   </footer>
+
+  <dialog id="acerca" class="acerca">
+    <h2>Acerca de esta agenda</h2>
+    <p>Una agenda personal sencilla para <strong>planificar, escribir y recordar</strong>.
+      Inspirada en el espíritu de las agendas de papel; sin copiar ninguna.</p>
+
+    <h3>Dónde están tus datos</h3>
+    <p><strong>En tu navegador, no en el servidor.</strong> La agenda usa el almacenamiento
+      local del navegador (IndexedDB). El servidor solo entrega los archivos de la página:
+      no guarda tareas, notas, ideas ni diario, y no hay cuenta ni registro.</p>
+
+    <h3>Riesgo que debes conocer</h3>
+    <p>Como los datos viven en este dispositivo, <strong>se pierden si borras los datos del
+      sitio</strong>, usas el <em>modo privado</em>, cambias de navegador o de dispositivo, o se
+      daña el almacenamiento. Llévalos contigo con <strong>Exportar</strong> (JSON, Markdown u
+      Org-mode) y guárdalos en otro sitio.</p>
+
+    <h3>Software libre</h3>
+    <p>Es <strong>software libre</strong> bajo licencia <span id="lic-2">AGPL-3.0</span>. Puedes
+      usarlo, estudiarlo, modificarlo y redistribuirlo. El código está disponible en
+      <a id="repo-link" href="https://github.com/mcasrom/agenda" target="_blank" rel="noopener noreferrer">el repositorio</a>.</p>
+
+    <h3>Sin trampas</h3>
+    <p>Sin publicidad, sin rastreadores, sin analítica y sin servicios externos que vean tu
+      contenido. Si te resulta útil, puedes
+      <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer">invitarme a un café</a>.</p>
+
+    <p class="muted" id="acerca-ver">Versión 0.1.0</p>
+    <form method="dialog"><button>Cerrar</button></form>
+  </dialog>
 
   <script type="module" src="js/app.js"></script>
 </body>

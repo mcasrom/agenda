@@ -3,6 +3,7 @@ import { iso, fromISO, addDays, todayISO, fmtLong } from './date.js';
 import { renderMonth } from './calendar.js';
 import { searchAll } from './search.js';
 import { toJSON, toMarkdown, toOrg, download, parseImport } from './export.js';
+import { VERSION, APP_URL, KOFI_URL, REPO_URL, LICENSE } from './version.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -61,6 +62,11 @@ function wire() {
   $('#del-all').onclick = deleteAll;
   $('#set-dark').onchange = (e) => { settings.dark = e.target.checked; saveSettings(); applySettings(); };
   $('#set-firstday').onchange = (e) => { settings.firstDay = Number(e.target.value); saveSettings(); };
+
+  $('#btn-acerca').onclick = openAcerca;
+  $('#btn-acerca-2').onclick = openAcerca;
+  $('#btn-share').onclick = share;
+  initFooter();
 
   document.addEventListener('keydown', (e) => {
     if (/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
@@ -145,7 +151,7 @@ async function addCita() {
 let saveTimer = null;
 function scheduleSave() {
   clearTimeout(saveTimer);
-  $('#estado').textContent = 'Guardando…';
+  const st = $('#estado'); if (st) st.textContent = 'Guardando…';
   saveTimer = setTimeout(async () => {
     day.notas = $('#notas').value;
     day.ideas = $('#ideas').value;
@@ -155,7 +161,7 @@ function scheduleSave() {
   }, 400);
 }
 
-function flash(msg) { $('#estado').textContent = msg; }
+function flash(msg) { const el = $('#estado'); if (el) el.textContent = msg; }
 
 async function renderCal() {
   if (calY === undefined) { calY = cur.getFullYear(); calM = cur.getMonth(); }
@@ -212,6 +218,39 @@ async function deleteAll() {
   await clearAll();
   alert('Datos borrados.');
   go(new Date());
+}
+
+function openAcerca() {
+  const d = $('#acerca');
+  if (typeof d.showModal === 'function') d.showModal();
+  else d.setAttribute('open', '');
+}
+
+function initFooter() {
+  $('#ver-num').textContent = VERSION;
+  $('#ver-lic').textContent = 'AGPL-3.0';
+  const av = $('#acerca-ver'); if (av) av.textContent = 'Versión ' + VERSION;
+  const l2 = $('#lic-2'); if (l2) l2.textContent = LICENSE;
+  const rl = $('#repo-link'); if (rl) rl.href = REPO_URL;
+  document.querySelectorAll('a.kofi, #acerca a[href*="ko-fi"]').forEach(a => { a.href = KOFI_URL; });
+}
+
+async function share() {
+  const data = {
+    title: 'Agenda',
+    text: 'Una agenda personal que no envía tus datos a ningún servidor: todo se queda en tu navegador.',
+    url: APP_URL
+  };
+  if (navigator.share) {
+    try { await navigator.share(data); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  try {
+    await navigator.clipboard.writeText(APP_URL);
+    flash('Enlace copiado al portapapeles');
+  } catch {
+    prompt('Copia este enlace para compartir:', APP_URL);
+  }
 }
 
 function escapeHtml(s) {

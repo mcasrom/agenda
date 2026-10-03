@@ -1,4 +1,4 @@
-const CACHE = 'agenda-v0.1.0';
+const CACHE = 'agenda-v0.1.1';
 const ASSETS = [
   './',
   './index.html',
@@ -9,9 +9,11 @@ const ASSETS = [
   './js/calendar.js',
   './js/search.js',
   './js/export.js',
+  './js/version.js',
   './manifest.json',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-512.png',
+  './icons/og.png'
 ];
 
 self.addEventListener('install', (e) => {

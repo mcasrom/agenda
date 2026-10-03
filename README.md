@@ -15,6 +15,19 @@ escribir notas e ideas, y guardar un diario. **Los datos se quedan en el navegad
 - **PWA**: instalable y funcional **sin conexión** tras la primera carga.
 - **Sin registro, sin cuenta, sin login**. Sin trackers ni analítica.
 
+**Versión**: `0.1.0`.
+
+## Privacidad y riesgo (leer)
+
+- El **servidor solo entrega los archivos** de la página. **No guarda nada tuyo**: ni tareas,
+  ni notas, ni diario, ni búsquedas. No hay cuenta ni registro.
+- Tus datos se guardan en el **almacenamiento local del navegador** (IndexedDB), en tu dispositivo.
+- Por eso **puedes perderlos**: si borras los datos del sitio, usas el modo privado, cambias de
+  navegador o de dispositivo, o se daña el almacenamiento. **Exporta una copia** (JSON/Markdown/Org)
+  de vez en cuando y guárdala en otro sitio.
+- No hay publicidad, rastreadores ni analítica. Si te resulta útil, puedes
+  [invitarme a un café](https://ko-fi.com/m_castillo).
+
 ## Arquitectura
 
 ```
