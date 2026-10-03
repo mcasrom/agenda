@@ -100,4 +100,4 @@ cuentas opcionales, CalDAV/ICS.
 
 ## Licencia
 
-Ver `LICENSE`.
+AGPL-3.0-or-later — ver `LICENSE`. Copyright (C) 2026 Miguel Castillo.
