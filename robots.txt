@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://agenda.viajeinteligencia.com/sitemap.xml
+Sitemap: https://agenda.pruebapublica.com/sitemap.xml
