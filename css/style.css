@@ -262,3 +262,8 @@ input[type="search"] {
   box-shadow: 0 4px 16px rgba(0,0,0,.25);
 }
 .toast .linkish { color: #fff; }
+
+/* chip de estado de conexión (narrativa PWA) */
+.net { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: .78rem; }
+
+.net[hidden] { display: none; }

@@ -74,6 +74,16 @@ async function init() {
   maybeAutoBackup();
   if (bc) bc.onmessage = (e) => { if (e.data && e.data.t === 'data') remoteRefresh(); };
   document.addEventListener('visibilitychange', () => { if (!document.hidden) remoteRefresh(); });
+  renderNet();
+  window.addEventListener('online', renderNet);
+  window.addEventListener('offline', renderNet);
+}
+
+function renderNet() {
+  const el = $('#net');
+  if (!el) return;
+  if (navigator.onLine) { el.hidden = true; el.textContent = ''; }
+  else { el.hidden = false; el.textContent = '☁︎ sin conexión · sigues funcionando'; }
 }
 
 const MAX_BACKUPS = 10;

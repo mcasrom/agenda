@@ -2,12 +2,13 @@
 
 Agenda personal digital inspirada en las agendas de papel: planificar el día,
 escribir notas e ideas, y guardar un diario. **Los datos se quedan en el navegador.**
+Es una **PWA**: se instala como aplicación (Android/Chrome, iPhone/Safari) y **funciona sin conexión**.
 
 > **Privacidad por arquitectura:** el servidor solo entrega archivos estáticos.
 > Tareas, notas, ideas, diario y búsquedas **no se envían a ningún servidor** en la V0.1.
 
 - **En producción**: <https://agenda.pruebapublica.com>
-- **Versión**: `0.1.6`
+- **Versión**: `0.1.7`
 - **Código**: <https://github.com/mcasrom/agenda> (privado)
 
 ## Qué es

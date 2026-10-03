@@ -7,7 +7,7 @@
 
   <title>Agenda personal sin registro — tus datos se quedan en tu navegador</title>
   <meta name="description" content="Agenda local-first para planificar el día, escribir notas, ideas y diario. Sin cuenta ni registro: todo se guarda en tu navegador y no se envía a ningún servidor. Exporta a JSON, Markdown y Org-mode. Funciona sin conexión.">
-  <meta name="app-version" content="0.1.6">
+  <meta name="app-version" content="0.1.7">
   <meta name="theme-color" content="#0f766e">
   <meta name="color-scheme" content="light dark">
   <link rel="canonical" href="https://agenda.pruebapublica.com/">
@@ -47,7 +47,7 @@
     "url": "https://agenda.pruebapublica.com/",
     "isAccessibleForFree": true,
     "license": "https://www.gnu.org/licenses/agpl-3.0.html",
-    "softwareVersion": "0.1.6",
+    "softwareVersion": "0.1.7",
     "featureList": [
       "Vista de día con tareas, citas, notas, ideas y diario",
       "Calendario mensual",
@@ -62,6 +62,7 @@
   </script>
 </head>
 <body>
+  <noscript><p style="margin:0;padding:14px 18px;background:#7f1d1d;color:#fff">Esta agenda funciona en el navegador y necesita <b>JavaScript activado</b>. No hay versión sin JS.</p></noscript>
   <header class="top">
     <div class="brand">
       <span class="title">AGENDA</span>
@@ -79,6 +80,7 @@
   <p class="tagline">
     Sin registro ni cuenta · funciona sin conexión ·
     <strong>tus datos se quedan en este dispositivo</strong>
+    <span id="net" class="net" hidden></span>
   </p>
 
   <main id="vista-dia">
@@ -178,7 +180,7 @@
 
   <footer class="foot">
     <div class="foot-inner">
-      <span class="ver"><span id="ver-num">0.1.6</span> · software libre <span id="ver-lic">AGPL-3.0</span></span>
+      <span class="ver"><span id="ver-num">0.1.7</span> · software libre <span id="ver-lic">AGPL-3.0</span></span>
       <span class="foot-actions">
         <a href="https://analisis.pruebapublica.com/" target="_blank" rel="noopener noreferrer" title="Blog de análisis">Blog</a>
         <button id="btn-copia" class="linkish" title="Exportar una copia de seguridad (JSON)">Copia: <span id="copia-dias">—</span></button>
@@ -210,6 +212,12 @@
     <p><strong>En tu navegador, no en el servidor.</strong> La agenda usa el almacenamiento
       local del navegador (IndexedDB). El servidor solo entrega los archivos de la página:
       no guarda tareas, notas, ideas ni diario, y no hay cuenta ni registro.</p>
+
+    <h3>Instalable y sin conexión (PWA)</h3>
+    <p>Es una <strong>aplicación web instalable</strong>. Para instalarla: <b>Android/Chrome</b> → menú
+      <b>⋮ → «Instalar aplicación»</b>; <b>iPhone/Safari</b> → <b>Compartir → «Añadir a pantalla de inicio»</b>.
+      Una vez cargada, <strong>funciona sin conexión</strong>: puedes escribir sin red y, al reabrirla, todo sigue
+      ahí. Sin tienda de apps y sin cuenta.</p>
 
     <h3>Qué registra el servidor</h3>
     <p>Al abrir la página, el servidor anota la <strong>petición</strong> (dirección IP, fecha
