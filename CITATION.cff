@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "Si usas esta agenda, cítala así:"
+title: "Agenda — local-first (PWA)"
+abstract: >-
+  Agenda personal local-first: tareas, citas, notas, ideas y diario. Los datos se
+  guardan en el navegador (IndexedDB), sin cuenta ni servidor; el servidor solo
+  entrega los archivos. Es una PWA: se instala como aplicación y funciona sin
+  conexión. Exporta e importa JSON, Markdown, Org-mode y .ics, e incluye export
+  cifrado (AES-GCM + PBKDF2).
+authors:
+  - family-names: Castillo
+    given-names: Miguel
+    email: mcasrom@gmail.com
+    website: "https://viajeinteligencia.com/"
+type: software
+license: AGPL-3.0-or-later
+license-url: "https://www.gnu.org/licenses/agpl-3.0.html"
+repository-code: "https://github.com/mcasrom/agenda"
+url: "https://agenda.pruebapublica.com"
+version: "0.1.11"
+date-released: "2026-10-03"
+keywords:
+  - agenda
+  - local-first
+  - PWA
+  - offline
+  - Org-mode
+  - privacidad
+  - open source
+# doi: 10.5281/zenodo.XXXXXXX   # añadir tras publicar un release en Zenodo (ver README §Citar)

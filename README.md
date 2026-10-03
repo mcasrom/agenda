@@ -169,6 +169,11 @@ Estático, servido por nginx desde `/home/deploy/agenda`:
 **V0.1 desplegada** (3-oct-2026) en `agenda.pruebapublica.com`. Hoja de ruta (no implementada):
 sincronización opcional, cuentas opcionales, CalDAV/ICS.
 
+## Citar
+
+- **Ficha de cita**: [`CITATION.cff`](CITATION.cff) (CFF 1.2.0).
+- **DOI (Zenodo)**: pendiente (repo archivado en Zenodo al publicar el release).
+
 ## Licencia
 
 AGPL-3.0-or-later — ver `LICENSE`. Copyright (C) 2026 Miguel Castillo.
