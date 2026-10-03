@@ -1,0 +1,18 @@
+Agenda — local-first
+Copyright (C) 2026 Miguel Castillo
+
+Este programa es software libre: puede redistribuirse y/o modificarse bajo los
+términos de la GNU Affero General Public License, versión 3 o posterior, tal y
+como la publica la Free Software Foundation.
+
+SPDX-License-Identifier: AGPL-3.0-or-later
+
+Se distribuye con la esperanza de que sea útil, pero SIN NINGUNA GARANTÍA; sin
+la garantía implícita de COMERCIABILIDAD o IDONEIDAD PARA UN PROPÓSITO
+PARTICULAR. Véase la GNU Affero General Public License para más detalles.
+
+El texto completo de la licencia está en:
+https://www.gnu.org/licenses/agpl-3.0.txt
+
+Nota: la licencia definitiva (AGPL-3.0 vs MIT) está pendiente de confirmación
+por el autor antes de publicar el repositorio.

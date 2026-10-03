@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Agenda</title>
+  <meta name="description" content="Agenda personal local-first: tus datos viven en tu navegador.">
+  <meta name="theme-color" content="#f5f5f2">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="title">AGENDA</span>
+      <span class="meta" id="fecha"></span>
+    </div>
+    <nav class="nav">
+      <button id="btn-hoy-arriba" title="Volver a hoy">Hoy</button>
+      <button id="btn-mes" title="Calendario mensual">Mes</button>
+      <button id="btn-buscar" title="Buscar">Buscar</button>
+      <button id="btn-cfg" title="Configuración">⚙</button>
+    </nav>
+  </header>
+
+  <main id="vista-dia">
+    <div class="daybar">
+      <button id="prev" title="Día anterior">‹</button>
+      <button id="next" title="Día siguiente">›</button>
+    </div>
+
+    <section>
+      <h3>Hoy</h3>
+      <ul id="tareas"></ul>
+      <button id="add-tarea">+ tarea</button>
+    </section>
+
+    <section>
+      <h3>Agenda</h3>
+      <ul id="citas"></ul>
+      <button id="add-cita">+ cita</button>
+    </section>
+
+    <section>
+      <h3>Notas</h3>
+      <textarea id="notas" rows="4" placeholder="Escribe una nota…"></textarea>
+    </section>
+
+    <section>
+      <h3>Ideas</h3>
+      <textarea id="ideas" rows="3" placeholder="Una idea…"></textarea>
+    </section>
+
+    <section>
+      <h3>Diario</h3>
+      <textarea id="diario" rows="5" placeholder="Hoy he…"></textarea>
+    </section>
+  </main>
+
+  <main id="vista-mes" hidden></main>
+
+  <main id="vista-busq" hidden>
+    <input id="q" type="search" placeholder="Buscar en la agenda…" autocomplete="off">
+    <div id="res"></div>
+  </main>
+
+  <main id="vista-cfg" hidden>
+    <h2>Configuración</h2>
+    <section>
+      <label class="row"><input type="checkbox" id="set-dark"> Modo oscuro</label>
+      <label class="row">Primer día de la semana:
+        <select id="set-firstday">
+          <option value="1">Lunes</option>
+          <option value="0">Domingo</option>
+        </select>
+      </label>
+    </section>
+    <section>
+      <h3>Datos</h3>
+      <div class="row"><button id="exp-json">Exportar JSON</button>
+        <button id="exp-md">Exportar Markdown</button>
+        <button id="exp-org">Exportar Org</button></div>
+      <div class="row"><label class="filebtn">Importar JSON<input type="file" id="imp-json" accept="application/json,.json" hidden></label></div>
+      <p class="muted">Tus datos se guardan en este dispositivo. Exporta una copia periódicamente para conservarlos.</p>
+    </section>
+    <section>
+      <button id="del-all" class="danger">Borrar todos los datos</button>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <small id="estado">Guardado localmente</small>
+    <small class="muted"> · Tus datos no salen de este navegador.</small>
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
