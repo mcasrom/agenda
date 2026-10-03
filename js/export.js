@@ -8,7 +8,7 @@ function title(day) {
 }
 
 export function toJSON(days) {
-  return JSON.stringify({ version: 1, app: 'agenda-local', exported: new Date().toISOString(), days }, null, 2);
+  return JSON.stringify({ version: 1, schemaVersion: 2, app: 'agenda-local', exported: new Date().toISOString(), days }, null, 2);
 }
 
 export function toMarkdown(days) {
@@ -67,11 +67,42 @@ export function download(name, text, type) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+// Saneado estricto: solo se aceptan tipos esperados (evita inyección de HTML y basura).
+function cleanDay(d) {
+  const out = { date: d.date, tasks: [], citas: [], notas: '', ideas: '', diario: '' };
+  if (Array.isArray(d.tasks)) {
+    for (const t of d.tasks) {
+      if (t && typeof t.text === 'string') out.tasks.push({ text: t.text, done: !!t.done });
+    }
+  }
+  if (Array.isArray(d.citas)) {
+    for (const c of d.citas) {
+      if (c && typeof c.t === 'string') out.citas.push({ h: typeof c.h === 'string' ? c.h : '', t: c.t });
+    }
+  }
+  for (const k of ['notas', 'ideas', 'diario']) if (typeof d[k] === 'string') out[k] = d[k];
+  // campos de cara a sincronización futura (se conservan si vienen)
+  for (const k of ['id', 'updatedAt', 'deletedAt']) if (typeof d[k] === 'string') out[k] = d[k];
+  return out;
+}
+
 export function parseImport(text) {
-  const data = JSON.parse(text);
-  let days = [];
+  let data;
+  try { data = JSON.parse(text); }
+  catch { throw new Error('no es JSON válido'); }
+  let days;
   if (Array.isArray(data)) days = data;
   else if (data && Array.isArray(data.days)) days = data.days;
-  else throw new Error('Formato no reconocido: se espera {days:[...]} o [...]');
-  return days.filter(d => d && typeof d.date === 'string');
+  else throw new Error('formato no reconocido: se espera {days:[...]} o [...]');
+  const sv = (data && data.schemaVersion) || 1;
+  if (sv > 2) throw new Error('versión de esquema no soportada: ' + sv);
+  const out = [];
+  for (const d of days) {
+    if (!d || typeof d.date !== 'string' || !ISO_DATE.test(d.date)) continue;
+    out.push(cleanDay(d));
+  }
+  if (!out.length) throw new Error('no contiene días válidos');
+  return out;
 }

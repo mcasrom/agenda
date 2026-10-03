@@ -7,7 +7,7 @@
 
   <title>Agenda personal sin registro — tus datos se quedan en tu navegador</title>
   <meta name="description" content="Agenda local-first para planificar el día, escribir notas, ideas y diario. Sin cuenta ni registro: todo se guarda en tu navegador y no se envía a ningún servidor. Exporta a JSON, Markdown y Org-mode. Funciona sin conexión.">
-  <meta name="app-version" content="0.1.0">
+  <meta name="app-version" content="0.1.1">
   <meta name="theme-color" content="#0f766e">
   <meta name="color-scheme" content="light dark">
   <link rel="canonical" href="https://agenda.pruebapublica.com/">
@@ -47,7 +47,7 @@
     "url": "https://agenda.pruebapublica.com/",
     "isAccessibleForFree": true,
     "license": "https://www.gnu.org/licenses/agpl-3.0.html",
-    "softwareVersion": "0.1.0",
+    "softwareVersion": "0.1.1",
     "featureList": [
       "Vista de día con tareas, citas, notas, ideas y diario",
       "Calendario mensual",
@@ -71,8 +71,8 @@
       <button id="btn-hoy-arriba" title="Volver a hoy">Hoy</button>
       <button id="btn-mes" title="Calendario mensual">Mes</button>
       <button id="btn-buscar" title="Buscar">Buscar</button>
-      <button id="btn-install" class="primary" hidden title="Instalar la agenda en este dispositivo">Instalar</button>
-      <button id="btn-cfg" title="Configuración">⚙</button>
+      <button id="btn-install" class="primary" hidden title="Instalar la agenda en este dispositivo" aria-label="Instalar la agenda en este dispositivo">Instalar</button>
+      <button id="btn-cfg" title="Configuración" aria-label="Configuración">⚙</button>
     </nav>
   </header>
 
@@ -83,8 +83,8 @@
 
   <main id="vista-dia">
     <div class="daybar">
-      <button id="prev" title="Día anterior">‹</button>
-      <button id="next" title="Día siguiente">›</button>
+      <button id="prev" title="Día anterior" aria-label="Día anterior">‹</button>
+      <button id="next" title="Día siguiente" aria-label="Día siguiente">›</button>
     </div>
 
     <section id="puesta" class="puesta" hidden>
@@ -171,14 +171,15 @@
 
   <footer class="foot">
     <div class="foot-inner">
-      <span class="ver"><span id="ver-num">0.1.0</span> · software libre <span id="ver-lic">AGPL-3.0</span></span>
+      <span class="ver"><span id="ver-num">0.1.1</span> · software libre <span id="ver-lic">AGPL-3.0</span></span>
       <span class="foot-actions">
+        <button id="btn-copia" class="linkish" title="Exportar una copia de seguridad (JSON)">Copia: <span id="copia-dias">—</span></button>
         <button id="btn-acerca" class="linkish">Acerca de</button>
         <a class="kofi" href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer">☕ Apóyame</a>
         <button id="btn-share">Compartir</button>
       </span>
     </div>
-    <small class="muted foot-note"><span id="estado">Guardado localmente</span> · El servidor solo entrega esta página: no guarda nada tuyo.</small>
+    <small class="muted foot-note"><span id="estado">Guardado localmente</span> · El servidor solo entrega esta página: <strong>no guarda tu contenido</strong>. <button id="btn-acerca-3" class="linkish">Qué registra</button></small>
   </footer>
 
   <dialog id="onboarding" class="acerca">
@@ -201,6 +202,12 @@
     <p><strong>En tu navegador, no en el servidor.</strong> La agenda usa el almacenamiento
       local del navegador (IndexedDB). El servidor solo entrega los archivos de la página:
       no guarda tareas, notas, ideas ni diario, y no hay cuenta ni registro.</p>
+
+    <h3>Qué registra el servidor</h3>
+    <p>Al abrir la página, el servidor anota la <strong>petición</strong> (dirección IP, fecha
+      y agente) en sus <em>logs de acceso</em>, por seguridad y para una estadística agregada;
+      los conserva un tiempo limitado. <strong>No se guarda tu contenido</strong>: tareas,
+      notas, ideas y diario nunca salen del navegador.</p>
 
     <h3>Riesgo que debes conocer</h3>
     <p>Como los datos viven en este dispositivo, <strong>se pierden si borras los datos del

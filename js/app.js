@@ -17,7 +17,7 @@ const settings = loadSettings();
 const funnel = loadFunnel();
 
 function loadFunnel() {
-  const def = { onboarded: false, firstEntry: false, installed: false, exported: false, hidden: false };
+  const def = { onboarded: false, firstEntry: false, installed: false, exported: false, hidden: false, lastExport: null };
   try { return Object.assign(def, JSON.parse(localStorage.getItem('agenda-funnel') || '{}')); }
   catch { return def; }
 }
@@ -37,8 +37,37 @@ async function init() {
   wire();
   await showDay(cur);
   renderPuesta();
+  renderCopia();
+  requestPersist();
   maybeOnboard();
   registerSW();
+}
+
+async function requestPersist() {
+  try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); }
+  catch { /* opcional: si el navegador no lo concede, seguimos con almacenamiento normal */ }
+}
+
+function daysSince(isoStr) {
+  if (!isoStr) return null;
+  const d = Date.parse(isoStr);
+  if (Number.isNaN(d)) return null;
+  return Math.floor((Date.now() - d) / 86400000);
+}
+
+function renderCopia() {
+  const el = $('#copia-dias');
+  if (!el) return;
+  const n = daysSince(funnel.lastExport);
+  el.textContent = n === null ? 'nunca' : (n === 0 ? 'hoy' : 'hace ' + n + ' d');
+  const b = $('#btn-copia');
+  if (b) b.classList.toggle('warn', n === null || n > 14);
+}
+
+function touch(d) {
+  if (!d.id) d.id = (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2));
+  d.updatedAt = new Date().toISOString();
+  return d;
 }
 
 function maybeOnboard() {
@@ -103,6 +132,8 @@ function wire() {
 
   $('#btn-acerca').onclick = openAcerca;
   $('#btn-acerca-2').onclick = openAcerca;
+  $('#btn-acerca-3').onclick = openAcerca;
+  $('#btn-copia').onclick = exportJSON;
   $('#btn-share').onclick = share;
   wireInstall();
   initFooter();
@@ -157,7 +188,7 @@ function renderList(sel, arr, label, checkable) {
       const cb = document.createElement('input');
       cb.type = 'checkbox';
       cb.checked = !!item.done;
-      cb.onchange = async () => { item.done = cb.checked; await putDay(day); };
+      cb.onchange = async () => { item.done = cb.checked; await putDay(touch(day)); };
       li.appendChild(cb);
     }
     const span = document.createElement('span');
@@ -167,7 +198,7 @@ function renderList(sel, arr, label, checkable) {
     const del = document.createElement('button');
     del.textContent = '×';
     del.title = 'Eliminar';
-    del.onclick = async () => { arr.splice(i, 1); await putDay(day); renderDay(); };
+    del.onclick = async () => { arr.splice(i, 1); await putDay(touch(day)); renderDay(); };
     li.appendChild(del);
     ul.appendChild(li);
   });
@@ -177,25 +208,27 @@ async function addTarea() {
   const v = (prompt('Nueva tarea') || '').trim();
   if (!v) return;
   day.tasks.push({ text: v, done: false });
-  await putDay(day); renderDay(); markStep('firstEntry'); flash('Guardado localmente');
+  await putDay(touch(day)); renderDay(); markStep('firstEntry'); flash('Guardado localmente');
 }
 async function addCita() {
   const h = (prompt('Hora (HH:MM), opcional') || '').trim();
   const t = (prompt('Cita') || '').trim();
   if (!t) return;
   day.citas.push({ h, t });
-  await putDay(day); renderDay(); markStep('firstEntry'); flash('Guardado localmente');
+  await putDay(touch(day)); renderDay(); markStep('firstEntry'); flash('Guardado localmente');
 }
 
 async function exportJSON() {
   download('agenda-' + todayISO() + '.json', toJSON(await allDays()), 'application/json;charset=utf-8');
   markStep('exported');
+  funnel.lastExport = new Date().toISOString(); saveFunnel(); renderCopia();
 }
 async function exportText(kind) {
   const days = await allDays();
   if (kind === 'md') download('agenda-' + todayISO() + '.md', toMarkdown(days), 'text/markdown;charset=utf-8');
   else download('agenda-' + todayISO() + '.org', toOrg(days), 'text/plain;charset=utf-8');
   markStep('exported');
+  funnel.lastExport = new Date().toISOString(); saveFunnel(); renderCopia();
 }
 
 let saveTimer = null;
@@ -206,7 +239,7 @@ function scheduleSave() {
     day.notas = $('#notas').value;
     day.ideas = $('#ideas').value;
     day.diario = $('#diario').value;
-    await putDay(day);
+    await putDay(touch(day));
     if (day.notas || day.ideas || day.diario) markStep('firstEntry');
     flash('Guardado localmente');
   }, 400);
@@ -253,8 +286,7 @@ async function importFile(e) {
   try {
     const days = parseImport(await file.text());
     for (const d of days) {
-      const clean = Object.assign(emptyDay(d.date), d);
-      await putDay(clean);
+      await putDay(touch(Object.assign(emptyDay(d.date), d)));
     }
     alert('Importados ' + days.length + ' días.');
     await showDay(cur);
