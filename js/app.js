@@ -56,8 +56,10 @@ function withLock(fn) {
   return fn();
 }
 
-async function saveDay() {
-  await withLock(() => putDay(touch(day)));
+async function saveDay(target) {
+  const d = target || day;
+  if (!d) return;
+  await withLock(() => putDay(touch(d)));
   notifyChange();
 }
 
@@ -73,7 +75,8 @@ async function init() {
   registerSW();
   maybeAutoBackup();
   if (bc) bc.onmessage = (e) => { if (e.data && e.data.t === 'data') remoteRefresh(); };
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) remoteRefresh(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) flushSave(); else remoteRefresh(); });
+  window.addEventListener('beforeunload', flushSave);
   renderNet();
   window.addEventListener('online', renderNet);
   window.addEventListener('offline', renderNet);
@@ -235,7 +238,7 @@ function wire() {
   $('#add-cita').onclick = addCita;
   for (const id of ['notas', 'ideas', 'diario']) {
     $('#' + id).addEventListener('input', scheduleSave);
-    $('#' + id).addEventListener('blur', () => { if (pendingRemote) remoteRefresh(); });
+    $('#' + id).addEventListener('blur', () => { flushSave(); if (pendingRemote) remoteRefresh(); });
   }
 
   $('#q').addEventListener('input', runSearch);
@@ -258,7 +261,7 @@ function wire() {
 
   $('#btn-acerca').onclick = openAcerca;
   $('#btn-acerca-2').onclick = openAcerca;
-  $('#btn-acerca-3').onclick = openAcerca;
+  $('#btn-acerca-3').onclick = () => openAcerca('h-registros');
   $('#btn-copia').onclick = exportJSON;
   $('#btn-share').onclick = share;
   wireInstall();
@@ -284,7 +287,8 @@ function setView(v) {
   if (v === 'cfg') { syncCfg(); renderBackups(); }
 }
 
-function go(d) {
+async function go(d) {
+  await flushSave();
   cur = d;
   setView('day');
   showDay(cur);
@@ -292,6 +296,7 @@ function go(d) {
 
 async function showDay(d) {
   day = await getDay(iso(d));
+  dirty = false;
   const f = fmtLong(d);
   $('#fecha').textContent = f.charAt(0).toUpperCase() + f.slice(1);
   renderDay();
@@ -368,17 +373,24 @@ async function exportICS() {
 }
 
 let saveTimer = null;
+let dirty = false;
 function scheduleSave() {
+  dirty = true;
   clearTimeout(saveTimer);
   const st = $('#estado'); if (st) st.textContent = 'Guardando…';
-  saveTimer = setTimeout(async () => {
-    day.notas = $('#notas').value;
-    day.ideas = $('#ideas').value;
-    day.diario = $('#diario').value;
-    await saveDay();
-    if (day.notas || day.ideas || day.diario) markStep('firstEntry');
-    flash('Guardado localmente');
-  }, 400);
+  saveTimer = setTimeout(flushSave, 400);
+}
+async function flushSave() {
+  clearTimeout(saveTimer); saveTimer = null;
+  if (!dirty || !day) return;
+  dirty = false;
+  const target = day;
+  target.notas = $('#notas').value;
+  target.ideas = $('#ideas').value;
+  target.diario = $('#diario').value;
+  await saveDay(target);
+  if (target.notas || target.ideas || target.diario) markStep('firstEntry');
+  flash('Guardado localmente');
 }
 
 function flash(msg) { const el = $('#estado'); if (el) el.textContent = msg; }
@@ -468,6 +480,7 @@ async function deleteAll() {
   if (!confirm('¿Seguro que quieres borrar todos los datos de esta agenda?\n\nEsta acción no puede deshacerse.')) return;
   await makeBackup();          // guarda una copia antes de borrar (recuperable)
   await clearAll();
+  dirty = false;
   notifyChange();
   alert('Datos borrados. (Hay una copia en Configuración → Copias de seguridad.)');
   go(new Date());
@@ -496,10 +509,14 @@ function wireInstall() {
   if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) markStep('installed');
 }
 
-function openAcerca() {
+function openAcerca(anchor) {
   const d = $('#acerca');
   if (typeof d.showModal === 'function') d.showModal();
   else d.setAttribute('open', '');
+  if (typeof anchor === 'string') {
+    const el = document.getElementById(anchor);
+    if (el) setTimeout(() => el.scrollIntoView({ block: 'start' }), 30);
+  }
 }
 
 function initFooter() {
