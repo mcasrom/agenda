@@ -7,7 +7,7 @@
 
   <title>Agenda personal sin registro — tus datos se quedan en tu navegador</title>
   <meta name="description" content="Agenda local-first para planificar el día, escribir notas, ideas y diario. Sin cuenta ni registro: todo se guarda en tu navegador y no se envía a ningún servidor. Exporta a JSON, Markdown y Org-mode. Funciona sin conexión.">
-  <meta name="app-version" content="0.1.1">
+  <meta name="app-version" content="0.1.2">
   <meta name="theme-color" content="#0f766e">
   <meta name="color-scheme" content="light dark">
   <link rel="canonical" href="https://agenda.pruebapublica.com/">
@@ -47,7 +47,7 @@
     "url": "https://agenda.pruebapublica.com/",
     "isAccessibleForFree": true,
     "license": "https://www.gnu.org/licenses/agpl-3.0.html",
-    "softwareVersion": "0.1.1",
+    "softwareVersion": "0.1.2",
     "featureList": [
       "Vista de día con tareas, citas, notas, ideas y diario",
       "Calendario mensual",
@@ -158,7 +158,8 @@
       <h3>Datos</h3>
       <div class="row"><button id="exp-json">Exportar JSON</button>
         <button id="exp-md">Exportar Markdown</button>
-        <button id="exp-org">Exportar Org</button></div>
+        <button id="exp-org">Exportar Org</button>
+        <button id="exp-ics">Exportar .ics</button></div>
       <div class="row"><label class="filebtn">Importar JSON<input type="file" id="imp-json" accept="application/json,.json" hidden></label></div>
       <p class="muted">Tus datos se guardan en este dispositivo (almacenamiento local del navegador).
         Si borras los datos del sitio, cambias de navegador o de dispositivo, <strong>se pierden</strong>.
@@ -171,7 +172,7 @@
 
   <footer class="foot">
     <div class="foot-inner">
-      <span class="ver"><span id="ver-num">0.1.1</span> · software libre <span id="ver-lic">AGPL-3.0</span></span>
+      <span class="ver"><span id="ver-num">0.1.2</span> · software libre <span id="ver-lic">AGPL-3.0</span></span>
       <span class="foot-actions">
         <button id="btn-copia" class="linkish" title="Exportar una copia de seguridad (JSON)">Copia: <span id="copia-dias">—</span></button>
         <button id="btn-acerca" class="linkish">Acerca de</button>

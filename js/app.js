@@ -2,7 +2,7 @@ import { open, getDay, putDay, allDays, allKeys, clearAll, emptyDay } from './db
 import { iso, fromISO, addDays, todayISO, fmtLong } from './date.js';
 import { renderMonth } from './calendar.js';
 import { searchAll } from './search.js';
-import { toJSON, toMarkdown, toOrg, download, parseImport } from './export.js';
+import { toJSON, toMarkdown, toOrg, toICS, download, parseImport } from './export.js';
 import { VERSION, APP_URL, KOFI_URL, REPO_URL, LICENSE } from './version.js';
 
 const $ = (s) => document.querySelector(s);
@@ -123,6 +123,7 @@ function wire() {
   $('#exp-json').onclick = exportJSON;
   $('#exp-md').onclick = () => exportText('md');
   $('#exp-org').onclick = () => exportText('org');
+  $('#exp-ics').onclick = exportICS;
   $('#imp-json').onchange = importFile;
   $('#del-all').onclick = deleteAll;
   const px = $('#puesta-x'); if (px) px.onclick = () => { funnel.hidden = true; saveFunnel(); renderPuesta(); };
@@ -227,6 +228,11 @@ async function exportText(kind) {
   const days = await allDays();
   if (kind === 'md') download('agenda-' + todayISO() + '.md', toMarkdown(days), 'text/markdown;charset=utf-8');
   else download('agenda-' + todayISO() + '.org', toOrg(days), 'text/plain;charset=utf-8');
+  markStep('exported');
+  funnel.lastExport = new Date().toISOString(); saveFunnel(); renderCopia();
+}
+async function exportICS() {
+  download('agenda-' + todayISO() + '.ics', toICS(await allDays()), 'text/calendar;charset=utf-8');
   markStep('exported');
   funnel.lastExport = new Date().toISOString(); saveFunnel(); renderCopia();
 }

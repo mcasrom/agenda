@@ -15,7 +15,7 @@ escribir notas e ideas, y guardar un diario. **Los datos se quedan en el navegad
 - Vista **día** con tareas, citas, notas, ideas y diario (guardado automático).
 - **Calendario mensual** con puntos en los días con contenido.
 - **Búsqueda local**.
-- **Exportar/Importar**: JSON, y exportar también **Markdown** y **Org-mode** (Emacs).
+- **Exportar**: JSON, Markdown, **Org-mode** (Emacs) y **.ics** (para los avisos nativos del calendario). Importar: JSON.
 - **PWA**: instalable y funcional **sin conexión** tras la primera carga.
 - **Sin registro, sin cuenta, sin login**. Sin trackers ni analítica.
 

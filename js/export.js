@@ -55,6 +55,48 @@ export function toOrg(days) {
   return out.join('\n');
 }
 
+function pad2(n) { return String(n).padStart(2, '0'); }
+function icsDate(dateStr) { return dateStr.replace(/-/g, ''); }
+function icsStamp() {
+  const d = new Date();
+  return d.getUTCFullYear() + pad2(d.getUTCMonth() + 1) + pad2(d.getUTCDate()) +
+    'T' + pad2(d.getUTCHours()) + pad2(d.getUTCMinutes()) + pad2(d.getUTCSeconds()) + 'Z';
+}
+function icsEsc(s) {
+  return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+}
+
+// Exporta a iCalendar (.ics): citas → VEVENT, tareas → VTODO (con DUE y estado).
+// Sin zona horaria (hora "flotante") para que cada dispositivo use la suya.
+export function toICS(days) {
+  const L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//agenda-local//ES//',
+    'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
+  const stamp = icsStamp();
+  const host = 'agenda.pruebapublica.com';
+  for (const day of days) {
+    if (!day || !day.date) continue;
+    const d8 = icsDate(day.date);
+    const base = day.id || day.date;
+    (day.citas || []).forEach((c, i) => {
+      if (!c || typeof c.t !== 'string' || !c.t) return;
+      L.push('BEGIN:VEVENT', 'UID:' + base + '-c' + i + '@' + host, 'DTSTAMP:' + stamp);
+      if (c.h && /^\d{2}:\d{2}$/.test(c.h)) L.push('DTSTART:' + d8 + 'T' + c.h.replace(':', '') + '00');
+      else L.push('DTSTART;VALUE=DATE:' + d8);
+      L.push('SUMMARY:' + icsEsc(c.t), 'END:VEVENT');
+    });
+    (day.tasks || []).forEach((t, i) => {
+      if (!t || typeof t.text !== 'string' || !t.text) return;
+      L.push('BEGIN:VTODO', 'UID:' + base + '-t' + i + '@' + host, 'DTSTAMP:' + stamp,
+        'DUE;VALUE=DATE:' + d8, 'SUMMARY:' + icsEsc(t.text),
+        'STATUS:' + (t.done ? 'COMPLETED' : 'NEEDS-ACTION'));
+      if (t.done) L.push('COMPLETED:' + stamp);
+      L.push('END:VTODO');
+    });
+  }
+  L.push('END:VCALENDAR');
+  return L.join('\r\n') + '\r\n';
+}
+
 export function download(name, text, type) {
   const blob = new Blob([text], { type: type || 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
