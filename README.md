@@ -7,7 +7,7 @@ escribir notas e ideas, y guardar un diario. **Los datos se quedan en el navegad
 > Tareas, notas, ideas, diario y búsquedas **no se envían a ningún servidor** en la V0.1.
 
 - **En producción**: <https://agenda.pruebapublica.com>
-- **Versión**: `0.1.4`
+- **Versión**: `0.1.5`
 - **Código**: <https://github.com/mcasrom/agenda> (privado)
 
 ## Qué es
@@ -17,6 +17,8 @@ escribir notas e ideas, y guardar un diario. **Los datos se quedan en el navegad
 - **Búsqueda local**.
 - **Exportar**: JSON, Markdown, **Org-mode** (Emacs) y **.ics** (para los avisos nativos del calendario). Importar: JSON.
 - **PWA**: instalable y funcional **sin conexión** tras la primera carga.
+- **Varias pestañas**: se avisan entre sí (`BroadcastChannel`) y las escrituras se serializan
+  (`Web Locks`), para que una pestaña no pise a otra.
 - **Sin registro, sin cuenta, sin login**. Sin trackers ni analítica.
 
 ## Privacidad y riesgo (leer)

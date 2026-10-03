@@ -31,6 +31,36 @@ function loadSettings() {
 }
 function saveSettings() { localStorage.setItem('agenda-settings', JSON.stringify(settings)); }
 
+// Varias pestañas: se avisan por BroadcastChannel y las escrituras se serializan
+// con Web Locks para que una no pise a otra.
+const bc = ('BroadcastChannel' in window) ? new BroadcastChannel('agenda') : null;
+let pendingRemote = false;
+
+function notifyChange() { if (bc) bc.postMessage({ t: 'data', date: iso(cur) }); }
+
+function inputFocused() {
+  const ae = document.activeElement;
+  return ae && (ae.id === 'notas' || ae.id === 'ideas' || ae.id === 'diario');
+}
+
+async function remoteRefresh() {
+  if (inputFocused()) { pendingRemote = true; return; }
+  pendingRemote = false;
+  await showDay(cur);
+  if (view === 'month') renderCal();
+  flash('Actualizado desde otra pestaña');
+}
+
+function withLock(fn) {
+  if (navigator.locks && navigator.locks.request) return navigator.locks.request('agenda-write', fn);
+  return fn();
+}
+
+async function saveDay() {
+  await withLock(() => putDay(touch(day)));
+  notifyChange();
+}
+
 async function init() {
   db = await open();
   applySettings();
@@ -42,6 +72,8 @@ async function init() {
   maybeOnboard();
   registerSW();
   maybeAutoBackup();
+  if (bc) bc.onmessage = (e) => { if (e.data && e.data.t === 'data') remoteRefresh(); };
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) remoteRefresh(); });
 }
 
 const MAX_BACKUPS = 10;
@@ -101,6 +133,7 @@ async function restoreBackup(ts) {
   if (!confirm('¿Restaurar esta copia? Se reemplazará el contenido actual. (Antes se guarda una copia del estado actual.)')) return;
   await makeBackup();
   await replaceDays(b.data || []);
+  notifyChange();
   alert('Copia restaurada.');
   await showDay(cur);
   await renderBackups();
@@ -192,6 +225,7 @@ function wire() {
   $('#add-cita').onclick = addCita;
   for (const id of ['notas', 'ideas', 'diario']) {
     $('#' + id).addEventListener('input', scheduleSave);
+    $('#' + id).addEventListener('blur', () => { if (pendingRemote) remoteRefresh(); });
   }
 
   $('#q').addEventListener('input', runSearch);
@@ -266,7 +300,7 @@ function renderList(sel, arr, label, checkable) {
       const cb = document.createElement('input');
       cb.type = 'checkbox';
       cb.checked = !!item.done;
-      cb.onchange = async () => { item.done = cb.checked; await putDay(touch(day)); };
+      cb.onchange = async () => { item.done = cb.checked; await saveDay(); };
       li.appendChild(cb);
     }
     const span = document.createElement('span');
@@ -278,9 +312,9 @@ function renderList(sel, arr, label, checkable) {
     del.title = 'Eliminar';
     del.onclick = async () => {
       const [item] = arr.splice(i, 1);
-      await putDay(touch(day));
+      await saveDay();
       renderDay();
-      showToast('Eliminado', async () => { arr.splice(i, 0, item); await putDay(touch(day)); renderDay(); });
+      showToast('Eliminado', async () => { arr.splice(i, 0, item); await saveDay(); renderDay(); });
     };
     li.appendChild(del);
     ul.appendChild(li);
@@ -291,14 +325,14 @@ async function addTarea() {
   const v = (prompt('Nueva tarea') || '').trim();
   if (!v) return;
   day.tasks.push({ text: v, done: false });
-  await putDay(touch(day)); renderDay(); markStep('firstEntry'); flash('Guardado localmente');
+  await saveDay(); renderDay(); markStep('firstEntry'); flash('Guardado localmente');
 }
 async function addCita() {
   const h = (prompt('Hora (HH:MM), opcional') || '').trim();
   const t = (prompt('Cita') || '').trim();
   if (!t) return;
   day.citas.push({ h, t });
-  await putDay(touch(day)); renderDay(); markStep('firstEntry'); flash('Guardado localmente');
+  await saveDay(); renderDay(); markStep('firstEntry'); flash('Guardado localmente');
 }
 
 async function exportJSON() {
@@ -327,7 +361,7 @@ function scheduleSave() {
     day.notas = $('#notas').value;
     day.ideas = $('#ideas').value;
     day.diario = $('#diario').value;
-    await putDay(touch(day));
+    await saveDay();
     if (day.notas || day.ideas || day.diario) markStep('firstEntry');
     flash('Guardado localmente');
   }, 400);
@@ -377,6 +411,7 @@ async function importFile(e) {
     for (const d of days) {
       await putDay(touch(Object.assign(emptyDay(d.date), d)));
     }
+    notifyChange();
     alert('Importados ' + days.length + ' días.');
     await showDay(cur);
   } catch (err) {
@@ -389,6 +424,7 @@ async function deleteAll() {
   if (!confirm('¿Seguro que quieres borrar todos los datos de esta agenda?\n\nEsta acción no puede deshacerse.')) return;
   await makeBackup();          // guarda una copia antes de borrar (recuperable)
   await clearAll();
+  notifyChange();
   alert('Datos borrados. (Hay una copia en Configuración → Copias de seguridad.)');
   go(new Date());
 }
