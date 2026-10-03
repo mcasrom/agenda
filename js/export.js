@@ -148,3 +148,96 @@ export function parseImport(text) {
   if (!out.length) throw new Error('no contiene días válidos');
   return out;
 }
+
+const SEC = { Tareas: 'tasks', Agenda: 'citas', Notas: 'notas', Ideas: 'ideas', Diario: 'diario' };
+
+function newDay(date) { return { date, tasks: [], citas: [], notas: '', ideas: '', diario: '' }; }
+
+// --- Org (round-trip con nuestro export) ---
+export function parseOrg(text) {
+  const days = [];
+  let day = null, section = null, buf = [];
+  const flush = () => { if (day && section && section !== 'tasks' && section !== 'citas') day[section] = buf.join('\n').trim(); buf = []; };
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.replace(/\s+$/, '');
+    let m;
+    if ((m = /^\*\s+(\d{4}-\d{2}-\d{2})/.exec(line))) { if (day) { flush(); days.push(day); } day = newDay(m[1]); section = null; continue; }
+    if (!day) continue;
+    if ((m = /^\*\*\s+(Tareas|Agenda|Notas|Ideas|Diario)\s*$/.exec(line))) { flush(); section = SEC[m[1]]; continue; }
+    if ((m = /^\*\*\*\s+(TODO|DONE)\s+(.*)$/.exec(line))) { day.tasks.push({ text: m[2], done: m[1] === 'DONE' }); continue; }
+    if (section === 'tasks') continue;
+    if (section === 'citas') { const t = line.trim(); if (t) { const hh = /^(\d{2}:\d{2})\s+(.*)$/.exec(t); day.citas.push(hh ? { h: hh[1], t: hh[2] } : { h: '', t }); } continue; }
+    buf.push(line);
+  }
+  if (day) { flush(); days.push(day); }
+  return days.map(cleanDay).filter((d) => d.date);
+}
+
+// --- Markdown (round-trip con nuestro export) ---
+export function parseMarkdown(text) {
+  const days = [];
+  let day = null, section = null, buf = [];
+  const flush = () => { if (day && section && section !== 'tasks' && section !== 'citas') day[section] = buf.join('\n').trim(); buf = []; };
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.replace(/\s+$/, '');
+    let m;
+    if ((m = /^#\s+(\d{4}-\d{2}-\d{2})/.exec(line))) { if (day) { flush(); days.push(day); } day = newDay(m[1]); section = null; continue; }
+    if (!day) continue;
+    if ((m = /^##\s+(Tareas|Agenda|Notas|Ideas|Diario)\s*$/.exec(line))) { flush(); section = SEC[m[1]]; continue; }
+    if (section === 'tasks') { const t = /^-\s+\[( |x|X)\]\s+(.*)$/.exec(line); if (t) day.tasks.push({ text: t[2], done: t[1].toLowerCase() === 'x' }); continue; }
+    if (section === 'citas') { const c = /^-\s+(.+)$/.exec(line); if (c) { const t = c[1].trim(); const hh = /^(\d{2}:\d{2})\s+(.*)$/.exec(t); day.citas.push(hh ? { h: hh[1], t: hh[2] } : { h: '', t }); } continue; }
+    buf.push(line);
+  }
+  if (day) { flush(); days.push(day); }
+  return days.map(cleanDay).filter((d) => d.date);
+}
+
+// --- iCalendar (.ics): VEVENT -> cita, VTODO -> tarea ---
+function icsUnesc(s) {
+  return s.replace(/\\n/gi, '\n').replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\\\/g, '\\');
+}
+function icsCommit(cur, byDate) {
+  const dt = cur.props.DTSTART || cur.props.DUE;
+  if (!dt) return;
+  const m = /(\d{4})(\d{2})(\d{2})/.exec(dt.value);
+  if (!m) return;
+  const date = m[1] + '-' + m[2] + '-' + m[3];
+  const d = byDate[date] || (byDate[date] = newDay(date));
+  const sum = cur.props.SUMMARY ? icsUnesc(cur.props.SUMMARY.value) : '';
+  if (!sum) return;
+  if (cur.type === 'VTODO') {
+    d.tasks.push({ text: sum, done: (cur.props.STATUS || {}).value === 'COMPLETED' });
+  } else {
+    let h = '';
+    const hm = /T(\d{2})(\d{2})/.exec(dt.value);
+    if (hm && !dt.allDay) h = hm[1] + ':' + hm[2];
+    d.citas.push({ h, t: sum });
+  }
+}
+export function parseICS(text) {
+  const folded = text.replace(/\r\n/g, '\n').replace(/\n[ \t]/g, '');
+  const byDate = {};
+  let cur = null;
+  for (const line of folded.split('\n')) {
+    if (line === 'BEGIN:VEVENT' || line === 'BEGIN:VTODO') { cur = { type: line.slice(6), props: {} }; continue; }
+    if (line === 'END:VEVENT' || line === 'END:VTODO') { if (cur) icsCommit(cur, byDate); cur = null; continue; }
+    if (!cur) continue;
+    const i = line.indexOf(':');
+    if (i < 0) continue;
+    const keyPart = line.slice(0, i);
+    const value = line.slice(i + 1);
+    const key = keyPart.split(';')[0].toUpperCase();
+    const allDay = /VALUE=DATE(?!-TIME)/i.test(keyPart) || !/T\d{4}/.test(value);
+    if (!(key in cur.props)) cur.props[key] = { value, allDay };
+  }
+  return Object.values(byDate).map(cleanDay);
+}
+
+// Detecta el formato por extensión o por el contenido.
+export function parseAuto(text, name) {
+  const ext = ((name || '').split('.').pop() || '').toLowerCase();
+  if (ext === 'ics' || /^\s*BEGIN:VCALENDAR/i.test(text)) return parseICS(text);
+  if (ext === 'org' || /^\*\s+\d{4}-\d{2}-\d{2}/m.test(text)) return parseOrg(text);
+  if (ext === 'md' || ext === 'markdown' || /^#\s+\d{4}-\d{2}-\d{2}/m.test(text)) return parseMarkdown(text);
+  return parseImport(text);
+}

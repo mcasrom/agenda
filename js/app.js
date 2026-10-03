@@ -2,7 +2,7 @@ import { open, getDay, putDay, allDays, allKeys, clearAll, emptyDay, putBackup, 
 import { iso, fromISO, addDays, todayISO, fmtLong } from './date.js';
 import { renderMonth } from './calendar.js';
 import { searchAll } from './search.js';
-import { toJSON, toMarkdown, toOrg, toICS, download, parseImport } from './export.js';
+import { toJSON, toMarkdown, toOrg, toICS, download, parseAuto } from './export.js';
 import { VERSION, APP_URL, KOFI_URL, REPO_URL, LICENSE } from './version.js';
 
 const $ = (s) => document.querySelector(s);
@@ -235,6 +235,10 @@ function wire() {
   $('#exp-org').onclick = () => exportText('org');
   $('#exp-ics').onclick = exportICS;
   $('#imp-json').onchange = importFile;
+  const im = $('#imp-merge'); if (im) im.onclick = () => { const d = $('#imp-dlg'); if (d && d.close) d.close(); doImport('merge'); };
+  const ir = $('#imp-replace'); if (ir) ir.onclick = () => { const d = $('#imp-dlg'); if (d && d.close) d.close(); doImport('replace'); };
+  const ic = $('#imp-cancel'); if (ic) ic.onclick = () => { const d = $('#imp-dlg'); if (d && d.close) d.close(); pendingImport = null; };
+  const idg = $('#imp-dlg'); if (idg) idg.addEventListener('cancel', () => { pendingImport = null; });
   $('#del-all').onclick = deleteAll;
   const px = $('#puesta-x'); if (px) px.onclick = () => { funnel.hidden = true; saveFunnel(); renderPuesta(); };
   const pe = $('#puesta-export'); if (pe) pe.onclick = exportJSON;
@@ -402,22 +406,52 @@ function syncCfg() {
   $('#set-firstday').value = String(settings.firstDay);
 }
 
+let pendingImport = null;
+
 async function importFile(e) {
   const file = e.target.files[0];
+  e.target.value = '';
   if (!file) return;
   try {
-    const days = parseImport(await file.text());
-    await makeBackup();        // copia de seguridad antes de importar
-    for (const d of days) {
-      await putDay(touch(Object.assign(emptyDay(d.date), d)));
-    }
-    notifyChange();
-    alert('Importados ' + days.length + ' días.');
-    await showDay(cur);
+    const days = parseAuto(await file.text(), file.name);
+    if (!days.length) throw new Error('no contiene días válidos');
+    pendingImport = days;
+    const info = $('#imp-info');
+    if (info) info.textContent = 'El archivo tiene ' + days.length + (days.length === 1 ? ' día' : ' días') + '. ¿Cómo quieres aplicarlo?';
+    const dlg = $('#imp-dlg');
+    if (dlg && typeof dlg.showModal === 'function') dlg.showModal();
+    else await doImport('merge');
   } catch (err) {
     alert('No se pudo importar: ' + err.message);
   }
-  e.target.value = '';
+}
+
+async function doImport(mode) {
+  const days = pendingImport || [];
+  if (!days.length) return;
+  await makeBackup();
+  if (mode === 'replace') {
+    for (const imp of days) await putDay(touch(Object.assign(emptyDay(imp.date), imp)));
+  } else {
+    for (const imp of days) {
+      const ex = await getDay(imp.date);
+      const tasks = (ex.tasks || []).slice();
+      const seenT = new Set(tasks.map((t) => (t.text || '') + '|' + !!t.done));
+      for (const t of (imp.tasks || [])) if (!seenT.has((t.text || '') + '|' + !!t.done)) tasks.push(t);
+      const citas = (ex.citas || []).slice();
+      const seenC = new Set(citas.map((c) => (c.h || '') + '|' + c.t));
+      for (const c of (imp.citas || [])) if (!seenC.has((c.h || '') + '|' + c.t)) citas.push(c);
+      const merged = Object.assign({}, ex, {
+        tasks, citas,
+        notas: ex.notas || imp.notas, ideas: ex.ideas || imp.ideas, diario: ex.diario || imp.diario
+      });
+      await putDay(touch(merged));
+    }
+  }
+  notifyChange();
+  await showDay(cur);
+  flash('Importados ' + days.length + ' días (' + (mode === 'replace' ? 'reemplazando' : 'fusionando') + ')');
+  pendingImport = null;
 }
 
 async function deleteAll() {

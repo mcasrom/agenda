@@ -7,7 +7,7 @@ escribir notas e ideas, y guardar un diario. **Los datos se quedan en el navegad
 > Tareas, notas, ideas, diario y búsquedas **no se envían a ningún servidor** en la V0.1.
 
 - **En producción**: <https://agenda.pruebapublica.com>
-- **Versión**: `0.1.5`
+- **Versión**: `0.1.6`
 - **Código**: <https://github.com/mcasrom/agenda> (privado)
 
 ## Qué es
@@ -15,7 +15,7 @@ escribir notas e ideas, y guardar un diario. **Los datos se quedan en el navegad
 - Vista **día** con tareas, citas, notas, ideas y diario (guardado automático).
 - **Calendario mensual** con puntos en los días con contenido.
 - **Búsqueda local**.
-- **Exportar**: JSON, Markdown, **Org-mode** (Emacs) y **.ics** (para los avisos nativos del calendario). Importar: JSON.
+- **Exportar**: JSON, Markdown, **Org-mode** (Emacs) y **.ics** (para los avisos nativos del calendario). Importar: JSON, Markdown, Org y .ics, con **fusión** (no duplica) o reemplazo.
 - **PWA**: instalable y funcional **sin conexión** tras la primera carga.
 - **Varias pestañas**: se avisan entre sí (`BroadcastChannel`) y las escrituras se serializan
   (`Web Locks`), para que una pestaña no pise a otra.
@@ -131,7 +131,8 @@ Un registro por día en el almacén `days` de IndexedDB (clave `date`, ISO `YYYY
 ## Copia de seguridad
 
 - **Exportar JSON** guarda todo el contenido en un archivo.
-- **Importar JSON** lo restaura (útil si se borran los datos del sitio).
+- **Importar** (JSON / Markdown / Org / .ics) lo restaura, o **fusiona** con lo que ya tienes
+  (tareas/citas nuevas sin duplicar; rellena los campos vacíos) — elige *Fusionar* o *Reemplazar*.
 - Exportar **Markdown** / **Org** / **.ics** sirve para leer, llevar el contenido a otros
   programas (Emacs Org-mode) o a los avisos nativos del calendario.
 - **Copias rotativas internas**: la app guarda **las últimas 10 copias** dentro del navegador
