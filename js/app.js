@@ -217,9 +217,24 @@ function renderPuesta() {
 }
 
 function registerSW() {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
-  }
+  if (!('serviceWorker' in navigator)) return;
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('./sw.js').then((reg) => {
+    if (hadController && reg.waiting) showUpdate();
+    reg.addEventListener('updatefound', () => {
+      const nw = reg.installing;
+      if (!nw) return;
+      nw.addEventListener('statechange', () => {
+        if (nw.state === 'installed' && hadController) showUpdate();
+      });
+    });
+  }).catch(() => { /* sin SW: la app sigue funcionando */ });
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController) showUpdate(); });
+}
+
+function showUpdate() {
+  const b = $('#update-banner');
+  if (b) b.hidden = false;
 }
 
 function applySettings() {
@@ -266,6 +281,7 @@ function wire() {
   $('#btn-share').onclick = share;
   wireInstall();
   initFooter();
+  const ur = $('#update-reload'); if (ur) ur.onclick = () => location.reload();
 
   document.addEventListener('keydown', (e) => {
     if (/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;

@@ -7,7 +7,7 @@
 
   <title>Agenda personal sin registro — tus datos se quedan en tu navegador</title>
   <meta name="description" content="Agenda local-first para planificar el día, escribir notas, ideas y diario. Sin cuenta ni registro: todo se guarda en tu navegador y no se envía a ningún servidor. Exporta a JSON, Markdown y Org-mode. Funciona sin conexión.">
-  <meta name="app-version" content="0.1.8">
+  <meta name="app-version" content="0.1.9">
   <meta name="theme-color" content="#0f766e">
   <meta name="color-scheme" content="light dark">
   <link rel="canonical" href="https://agenda.pruebapublica.com/">
@@ -47,7 +47,7 @@
     "url": "https://agenda.pruebapublica.com/",
     "isAccessibleForFree": true,
     "license": "https://www.gnu.org/licenses/agpl-3.0.html",
-    "softwareVersion": "0.1.8",
+    "softwareVersion": "0.1.9",
     "featureList": [
       "Vista de día con tareas, citas, notas, ideas y diario",
       "Calendario mensual",
@@ -63,6 +63,7 @@
 </head>
 <body>
   <noscript><p style="margin:0;padding:14px 18px;background:#7f1d1d;color:#fff">Esta agenda funciona en el navegador y necesita <b>JavaScript activado</b>. No hay versión sin JS.</p></noscript>
+  <div id="update-banner" class="update-banner" hidden>Hay una versión nueva. <button id="update-reload" class="linkish">Recargar</button></div>
   <header class="top">
     <div class="brand">
       <span class="title">AGENDA</span>
@@ -180,7 +181,7 @@
 
   <footer class="foot">
     <div class="foot-inner">
-      <span class="ver"><span id="ver-num">0.1.8</span> · software libre <span id="ver-lic">AGPL-3.0</span></span>
+      <span class="ver"><span id="ver-num">0.1.9</span> · software libre <span id="ver-lic">AGPL-3.0</span></span>
       <span class="foot-actions">
         <a href="https://analisis.pruebapublica.com/" target="_blank" rel="noopener noreferrer" title="Blog de análisis">Blog</a>
         <button id="btn-copia" class="linkish" title="Exportar una copia de seguridad (JSON)">Copia: <span id="copia-dias">—</span></button>
