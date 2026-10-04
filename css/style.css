@@ -263,7 +263,7 @@ input[type="search"] {
   display: flex; gap: 10px; align-items: center; z-index: 50;
   box-shadow: 0 4px 16px rgba(0,0,0,.25);
 }
-.toast .linkish { color: #fff; }
+.toast .linkish { color: var(--paper); text-decoration: underline; font-weight: 700; }
 
 /* chip de estado de conexión (narrativa PWA) */
 .net { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: .78rem; }
