@@ -26,7 +26,7 @@ function saveFunnel() { localStorage.setItem('agenda-funnel', JSON.stringify(fun
 function markStep(k) { if (!funnel[k]) { funnel[k] = true; saveFunnel(); renderPuesta(); } }
 
 function loadSettings() {
-  const def = { dark: false, firstDay: 1 };
+  const def = { dark: false, firstDay: 1, notify: false };
   try { return Object.assign(def, JSON.parse(localStorage.getItem('agenda-settings') || '{}')); }
   catch { return def; }
 }
@@ -75,8 +75,10 @@ async function init() {
   maybeOnboard();
   registerSW();
   maybeAutoBackup();
+  checkReminders();
+  setInterval(checkReminders, 30000);
   if (bc) bc.onmessage = (e) => { if (e.data && e.data.t === 'data') remoteRefresh(); };
-  document.addEventListener('visibilitychange', () => { if (document.hidden) flushSave(); else remoteRefresh(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) flushSave(); else { remoteRefresh(); checkReminders(); } });
   window.addEventListener('beforeunload', flushSave);
   renderNet();
   window.addEventListener('online', renderNet);
@@ -88,6 +90,58 @@ function renderNet() {
   if (!el) return;
   if (navigator.onLine) { el.hidden = true; el.textContent = ''; }
   else { el.hidden = false; el.textContent = '☁︎ sin conexión · sigues funcionando'; }
+}
+
+// --- Recordatorios de citas (mientras la agenda está abierta) ---
+function triggerTime(dateStr, hhmm, remindMin) {
+  const d = new Date(dateStr + 'T' + hhmm + ':00');
+  if (Number.isNaN(d.getTime())) return null;
+  d.setMinutes(d.getMinutes() - (remindMin || 0));
+  return d;
+}
+
+function fireReminder(c) {
+  const title = 'Cita ' + (c.h || '');
+  try {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification(title, { body: c.t, tag: 'agenda-' + c.h + '|' + (c.t || '').slice(0, 20) });
+    }
+  } catch { /* sin notificación del sistema: queda el aviso en pantalla */ }
+  showToast('🔔 ' + (c.h ? c.h + ' · ' : '') + c.t);
+}
+
+async function checkReminders() {
+  if (!settings.notify) return;
+  const date = todayISO();
+  await flushSave();
+  const d = await getDay(date);
+  let changed = false;
+  for (const c of (d.citas || [])) {
+    if (!c.t || c.remind == null || c.notified) continue;
+    if (!/^\d{2}:\d{2}$/.test(c.h || '')) continue;
+    const trig = triggerTime(date, c.h, c.remind);
+    if (!trig) continue;
+    const diff = Date.now() - trig.getTime();
+    if (diff >= 0 && diff <= 90 * 60000) {
+      fireReminder(c);
+      c.notified = new Date().toISOString();
+      changed = true;
+    }
+  }
+  if (changed) {
+    await putDay(touch(d));
+    if (day && day.date === date) showDay(cur);
+    notifyChange();
+  }
+}
+
+async function onNotifyToggle(e) {
+  if (!e.target.checked) { settings.notify = false; saveSettings(); return; }
+  if (!('Notification' in window)) { e.target.checked = false; alert('Este navegador no admite notificaciones.'); return; }
+  let perm = Notification.permission;
+  if (perm === 'default') perm = await Notification.requestPermission();
+  if (perm === 'granted') { settings.notify = true; saveSettings(); flash('Avisos de citas activados'); checkReminders(); }
+  else { settings.notify = false; saveSettings(); e.target.checked = false; alert('Permiso de notificaciones denegado. Puedes activarlo en el navegador.'); }
 }
 
 const MAX_BACKUPS = 10;
@@ -275,6 +329,7 @@ function wire() {
   const bkn = $('#bk-now'); if (bkn) bkn.onclick = async () => { await makeBackup(); await renderBackups(); flash('Copia creada'); };
   $('#set-dark').onchange = (e) => { settings.dark = e.target.checked; saveSettings(); applySettings(); };
   $('#set-firstday').onchange = (e) => { settings.firstDay = Number(e.target.value); saveSettings(); };
+  const sn = $('#set-notify'); if (sn) sn.onchange = onNotifyToggle;
 
   $('#btn-acerca').onclick = openAcerca;
   $('#btn-acerca-2').onclick = openAcerca;
@@ -322,7 +377,7 @@ async function showDay(d) {
 
 function renderDay() {
   renderList('#tareas', day.tasks, (t) => t.text, true);
-  renderList('#citas', day.citas, (c) => (c.h ? c.h + '  ' : '') + c.t, false);
+  renderList('#citas', day.citas, (c) => (c.h ? c.h + '  ' : '') + c.t + (c.remind != null ? '  · ⏰ ' + c.remind + '′' : ''), false);
   $('#notas').value = day.notas || '';
   $('#ideas').value = day.ideas || '';
   $('#diario').value = day.diario || '';
@@ -368,8 +423,14 @@ async function addCita() {
   const h = (prompt('Hora (HH:MM), opcional') || '').trim();
   const t = (prompt('Cita') || '').trim();
   if (!t) return;
-  day.citas.push({ h, t });
+  let remind = null;
+  if (settings.notify && /^\d{2}:\d{2}$/.test(h)) {
+    const r = prompt('¿Avisar antes? Minutos (0 = a la hora, vacío = sin aviso)', '10');
+    if (r !== null && r.trim() !== '') { const n = parseInt(r, 10); if (!Number.isNaN(n) && n >= 0) remind = n; }
+  }
+  day.citas.push({ h, t, remind });
   await saveDay(); renderDay(); markStep('firstEntry'); flash('Guardado localmente');
+  checkReminders();
 }
 
 async function exportJSON() {
@@ -458,6 +519,7 @@ async function runSearch() {
 function syncCfg() {
   $('#set-dark').checked = settings.dark;
   $('#set-firstday').value = String(settings.firstDay);
+  const n = $('#set-notify'); if (n) n.checked = !!settings.notify;
 }
 
 let pendingImport = null;

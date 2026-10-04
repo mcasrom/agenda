@@ -7,7 +7,7 @@
 
   <title>Agenda personal sin registro — tus datos se quedan en tu navegador</title>
   <meta name="description" content="Agenda local-first para planificar el día, escribir notas, ideas y diario. Sin cuenta ni registro: todo se guarda en tu navegador y no se envía a ningún servidor. Exporta a JSON, Markdown y Org-mode. Funciona sin conexión.">
-  <meta name="app-version" content="0.1.11">
+  <meta name="app-version" content="0.1.12">
   <meta name="theme-color" content="#0f766e">
   <meta name="color-scheme" content="light dark">
   <link rel="canonical" href="https://agenda.pruebapublica.com/">
@@ -47,7 +47,7 @@
     "url": "https://agenda.pruebapublica.com/",
     "isAccessibleForFree": true,
     "license": "https://www.gnu.org/licenses/agpl-3.0.html",
-    "softwareVersion": "0.1.11",
+    "softwareVersion": "0.1.12",
     "featureList": [
       "Vista de día con tareas, citas, notas, ideas y diario",
       "Calendario mensual",
@@ -158,6 +158,10 @@
       </label>
     </section>
     <section>
+      <label class="row"><input type="checkbox" id="set-notify"> Avisos de citas (mientras la agenda está abierta)</label>
+      <p class="muted">Al crear una cita con hora, podrás indicar si avisar (p. ej. 10 min antes). Requiere permiso de notificaciones. <b>Para avisos con la agenda cerrada</b>, exporta a <b>.ics</b> y añádelo a tu calendario.</p>
+    </section>
+    <section>
       <h3>Datos</h3>
       <div class="row"><button id="exp-json">Exportar JSON</button>
         <button id="exp-md">Exportar Markdown</button>
@@ -182,7 +186,7 @@
 
   <footer class="foot">
     <div class="foot-inner">
-      <span class="ver"><span id="ver-num">0.1.11</span> · software libre <span id="ver-lic">AGPL-3.0</span></span>
+      <span class="ver"><span id="ver-num">0.1.12</span> · software libre <span id="ver-lic">AGPL-3.0</span></span>
       <span class="foot-actions">
         <a href="https://analisis.pruebapublica.com/" target="_blank" rel="noopener noreferrer" title="Blog de análisis">Blog</a>
         <button id="btn-copia" class="linkish" title="Exportar una copia de seguridad (JSON)">Copia: <span id="copia-dias">—</span></button>
@@ -244,6 +248,7 @@
       <a href="https://ko-fi.com/m_castillo" target="_blank" rel="noopener noreferrer">invitarme a un café</a>.</p>
 
     <p class="muted">Más del ecosistema: <a href="https://analisis.pruebapublica.com/" target="_blank" rel="noopener noreferrer">Blog de análisis</a> · <a href="https://vivienda.pruebapublica.com/" target="_blank" rel="noopener noreferrer">Observatorio de la vivienda</a>.</p>
+    <p class="muted">Los <b>avisos de citas</b> funcionan mientras la agenda está abierta (con permiso del navegador). Para avisos con la app cerrada, exporta a <b>.ics</b> y añádelo a tu calendario.</p>
     <p class="muted" id="acerca-ver">Versión 0.1.0</p>
     <form method="dialog"><button>Cerrar</button></form>
   </dialog>

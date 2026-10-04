@@ -8,7 +8,7 @@ Es una **PWA**: se instala como aplicación (Android/Chrome, iPhone/Safari) y **
 > Tareas, notas, ideas, diario y búsquedas **no se envían a ningún servidor** en la V0.1.
 
 - **En producción**: <https://agenda.pruebapublica.com>
-- **Versión**: `0.1.11`
+- **Versión**: `0.1.12`
 - **Código**: <https://github.com/mcasrom/agenda> (privado)
 
 ## Qué es
@@ -20,6 +20,8 @@ Es una **PWA**: se instala como aplicación (Android/Chrome, iPhone/Safari) y **
 - **PWA**: instalable y funcional **sin conexión** tras la primera carga.
 - **Varias pestañas**: se avisan entre sí (`BroadcastChannel`) y las escrituras se serializan
   (`Web Locks`), para que una pestaña no pise a otra.
+- **Avisos de citas**: recordatorio (p. ej. 10 min antes) mientras la app está abierta, con
+  permiso del navegador; para avisos con la app cerrada, exporta a **`.ics`** y añádelo a tu calendario.
 - **Sin registro, sin cuenta, sin login**. Sin trackers ni analítica.
 
 ## Privacidad y riesgo (leer)
