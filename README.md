@@ -169,7 +169,9 @@ Estático, servido por nginx desde `/home/deploy/agenda`:
 ## Estado
 
 **V0.1 desplegada** (3-oct-2026) en `agenda.pruebapublica.com`. Hoja de ruta (no implementada):
-sincronización opcional, cuentas opcionales, CalDAV/ICS.
+sincronización opcional, cuentas opcionales, CalDAV/ICS. **Modo foco (Pomodoro)**: evaluado
+(viable y sin coste de servidor; opt-in y solo con la app abierta, como los avisos de citas),
+**pendiente de decisión**.
 
 ## Citar
 
