@@ -8,8 +8,8 @@ Es una **PWA**: se instala como aplicación (Android/Chrome, iPhone/Safari) y **
 > Tareas, notas, ideas, diario y búsquedas **no se envían a ningún servidor** en la V0.1.
 
 - **En producción**: <https://agenda.pruebapublica.com>
-- **Versión**: `0.1.12`
-- **Código**: <https://github.com/mcasrom/agenda> (privado)
+- **Versión**: `0.1.14`
+- **Código**: <https://github.com/mcasrom/agenda> (público, AGPL-3.0)
 
 ## Qué es
 
@@ -22,6 +22,9 @@ Es una **PWA**: se instala como aplicación (Android/Chrome, iPhone/Safari) y **
   (`Web Locks`), para que una pestaña no pise a otra.
 - **Avisos de citas**: recordatorio (p. ej. 10 min antes) mientras la app está abierta, con
   permiso del navegador; para avisos con la app cerrada, exporta a **`.ics`** y añádelo a tu calendario.
+- **Sincronización opcional sin servidor propio**: eliges un archivo (`agenda-sync.json`) dentro
+  de una carpeta que ya sincronizas (Syncthing, Nextcloud, Google Drive, Dropbox, iCloud…) y la
+  agenda lo lee/escribe ahí. Nada pasa por un servidor nuestro. *(Chrome/Edge.)*
 - **Sin registro, sin cuenta, sin login**. Sin trackers ni analítica.
 
 ## Privacidad y riesgo (leer)
@@ -39,6 +42,9 @@ Es una **PWA**: se instala como aplicación (Android/Chrome, iPhone/Safari) y **
   y avisa si llevas mucho sin exportar. **Exporta una copia** (JSON/Markdown/Org) y guárdala aparte.
 - La **importación** valida el esquema (`schemaVersion`) y sanea cada campo (solo tipos esperados;
   el contenido se pinta como texto, nunca como HTML) — un fichero malicioso no ejecuta código.
+- **Sincronización (opcional)**: si la activas, el contenido se escribe **en claro** en el archivo
+  que elijas, dentro de una carpeta que tú controlas (si es de nube, esa nube también lo ve). No
+  pasa por ningún servidor nuestro.
 - No hay publicidad, rastreadores ni analítica. Si te resulta útil, puedes
   [invitarme a un café](https://ko-fi.com/m_castillo).
 
@@ -108,6 +114,7 @@ agenda-local/
 │   ├── calendar.js  # vista mensual
 │   ├── search.js    # búsqueda local
 │   ├── export.js    # exportar/importar
+│   ├── sync.js      # sincronización por archivo (File System Access)
 │   └── version.js   # versión, URL, Ko-fi, repo, licencia
 ├── icons/
 ├── README.md
@@ -131,6 +138,11 @@ Un registro por día en el almacén `days` de IndexedDB (clave `date`, ISO `YYYY
 }
 ```
 
+Otros almacenes de la **misma DB (v3)**: **`backups`** (copias rotativas), **`tombstones`**
+(`{date, ts}`: días borrados, para propagar el borrado en la sincronización) y **`meta`**
+(clave-valor: handle del archivo de sincronización y última sincronización). Cada día guarda
+`updatedAt` (lo fija `touch()` al guardar) y se usa para resolver la fusión.
+
 ## Copia de seguridad
 
 - **Exportar JSON** guarda todo el contenido en un archivo.
@@ -148,6 +160,29 @@ Un registro por día en el almacén `days` de IndexedDB (clave `date`, ISO `YYYY
 Los datos dependen del navegador: si se borran los datos del sitio, se pierden.
 Exportar una copia periódicamente (y el indicador «Copia: hace N días») sigue siendo la
 red de seguridad frente a perder el navegador entero.
+
+## Sincronización (opcional, sin servidor propio)
+
+Para usar la agenda en **varios dispositivos** (o como copia viva) sin montar un backend:
+
+1. En **Configuración → Sincronización**, pulsa **«Elegir archivo…»** y crea/elegí
+   `agenda-sync.json` **dentro de una carpeta que ya sincronizas** (Syncthing, Nextcloud,
+   Google Drive, Dropbox, iCloud…).
+2. Repite en el otro dispositivo eligiendo **el mismo archivo** (en la carpeta sincronizada).
+3. Sincroniza sola al abrir, al volver a la pestaña, cada 5 min y tras cada cambio; también con
+   **«Sincronizar ahora»**.
+
+El archivo es un JSON con los días y sus marcas de tiempo; al sincronizar se **fusiona por día**
+(gana el más reciente) y los **borrados se propagan** con *tombstones*. Es
+**última-escritura-gana por día** (dos ediciones simultáneas del mismo día no se combinan).
+
+Límites y avisos:
+- Necesita la **File System Access API** → **Chrome/Edge**. **No** en Safari/iOS ni Firefox:
+  allí usa **Exportar / Importar**.
+- El archivo va **en claro** (como el JSON de exportación). Si la carpeta está en una nube
+  (Drive/Dropbox/OneDrive), **esa nube ve el contenido**; para máxima privacidad, usa una carpeta
+  **Syncthing o Nextcloud propios**.
+- Es un **archivo**, no un servicio: no hay servidor nuestro ni cuenta.
 
 ## Despliegue
 
@@ -168,10 +203,10 @@ Estático, servido por nginx desde `/home/deploy/agenda`:
 
 ## Estado
 
-**V0.1 desplegada** (3-oct-2026) en `agenda.pruebapublica.com`. Hoja de ruta (no implementada):
-sincronización opcional, cuentas opcionales, CalDAV/ICS. **Modo foco (Pomodoro)**: evaluado
-(viable y sin coste de servidor; opt-in y solo con la app abierta, como los avisos de citas),
-**pendiente de decisión**.
+**V0.1.14** en `agenda.pruebapublica.com`. **Sincronización por archivo (F) — HECHA** (v0.1.14):
+sin servidor propio, fichero en carpeta que ya sincronizas, fusión por día + *tombstones*
+(solo Chrome/Edge). Pendiente en hoja de ruta: **cuentas opcionales, CalDAV/ICS**. **Modo foco
+(Pomodoro)** (J): evaluado (viable, opt-in, solo con la app abierta), **aparcado**.
 
 ## Citar
 

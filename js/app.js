@@ -1,9 +1,10 @@
-import { open, getDay, putDay, allDays, allKeys, clearAll, emptyDay, putBackup, allBackups, deleteBackup, replaceDays } from './db.js';
+import { open, getDay, putDay, allDays, allKeys, clearAll, emptyDay, putBackup, allBackups, deleteBackup, replaceDays, allTombstones, replaceTombstones, putTombstone, getMeta, putMeta, deleteMeta } from './db.js';
 import { iso, fromISO, addDays, todayISO, fmtLong } from './date.js';
 import { renderMonth } from './calendar.js';
 import { searchAll } from './search.js';
 import { toJSON, toMarkdown, toOrg, toICS, download, parseAuto } from './export.js';
 import { encryptText, decryptText, isEncrypted } from './crypto.js';
+import { supported as syncSupported, pickSyncFile, ensurePermission, readSyncFile, writeSyncFile, mergeData, makeRemote } from './sync.js';
 import { VERSION, APP_URL, KOFI_URL, REPO_URL, LICENSE } from './version.js';
 
 const $ = (s) => document.querySelector(s);
@@ -62,6 +63,7 @@ async function saveDay(target) {
   if (!d) return;
   await withLock(() => putDay(touch(d)));
   notifyChange();
+  scheduleSync();
 }
 
 async function init() {
@@ -77,8 +79,10 @@ async function init() {
   maybeAutoBackup();
   checkReminders();
   setInterval(checkReminders, 30000);
+  initSync();
+  setInterval(() => { if (!document.hidden) syncNow({ silent: true }); }, 5 * 60000);
   if (bc) bc.onmessage = (e) => { if (e.data && e.data.t === 'data') remoteRefresh(); };
-  document.addEventListener('visibilitychange', () => { if (document.hidden) flushSave(); else { remoteRefresh(); checkReminders(); } });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) flushSave(); else { remoteRefresh(); checkReminders(); syncNow({ silent: true }); } });
   window.addEventListener('beforeunload', flushSave);
   renderNet();
   window.addEventListener('online', renderNet);
@@ -144,6 +148,127 @@ async function onNotifyToggle(e) {
   else { settings.notify = false; saveSettings(); e.target.checked = false; alert('Permiso de notificaciones denegado. Puedes activarlo en el navegador.'); }
 }
 
+// --- Sincronización (sin servidor propio): fichero en una carpeta que ya sincronizas ---
+let syncHandle = null;
+let syncFileName = '';
+let syncLast = null;
+let syncTimer = null;
+let syncBusy = false;
+
+function syncEl(id) { return document.getElementById(id); }
+
+function fmtSyncWhen(ts) {
+  if (!ts) return 'esta sesión aún no';
+  const min = Math.floor((Date.now() - Date.parse(ts)) / 60000);
+  if (Number.isNaN(min)) return '—';
+  if (min < 1) return 'ahora mismo';
+  if (min < 60) return 'hace ' + min + ' min';
+  const h = Math.floor(min / 60);
+  if (h < 24) return 'hace ' + h + ' h';
+  return new Date(ts).toLocaleDateString('es-ES');
+}
+
+function renderSync() {
+  const st = syncEl('sync-status');
+  if (!st) return;
+  if (syncHandle) st.textContent = 'Archivo: ' + syncFileName + ' · última sincronización: ' + fmtSyncWhen(syncLast) + '.';
+  else st.textContent = 'Sin configurar. Elige un archivo dentro de una carpeta que ya sincronizas.';
+  const now = syncEl('sync-now'); if (now) now.hidden = !syncHandle;
+  const off = syncEl('sync-off'); if (off) off.hidden = !syncHandle;
+}
+
+function syncFlash(msg) { const st = syncEl('sync-status'); if (st) st.textContent = msg; setTimeout(renderSync, 2500); }
+
+async function initSync() {
+  if (!syncSupported()) {
+    const un = syncEl('sync-unsupported'); if (un) un.hidden = false;
+    const c = syncEl('sync-controls'); if (c) c.hidden = true;
+    return;
+  }
+  try {
+    const h = await getMeta('syncHandle');
+    const last = await getMeta('syncLast');
+    if (h) { syncHandle = h; syncFileName = h.name || 'agenda-sync.json'; syncLast = last || null; }
+    renderSync();
+    if (syncHandle && await ensurePermission(syncHandle, false)) syncNow({ silent: true });
+  } catch (e) { console.warn('sync init:', e); }
+}
+
+function scheduleSync(delay) {
+  if (!syncHandle || syncBusy) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => syncNow({ silent: true }), delay == null ? 2000 : delay);
+}
+
+async function syncNow(opts) {
+  opts = opts || {};
+  if (!syncHandle || syncBusy) return;
+  if (inputFocused()) { scheduleSync(3000); return; }
+  syncBusy = true;
+  clearTimeout(syncTimer);
+  try {
+    const ok = await ensurePermission(syncHandle, !opts.silent);
+    if (!ok) { syncFlash('Permiso pendiente: pulsa «Sincronizar ahora» y autoriza.'); return; }
+    const run = async () => {
+      await flushSave();
+      const local = { days: await allDays(), tombstones: await allTombstones() };
+      let remote = null;
+      let readError = null;
+      try { remote = await readSyncFile(syncHandle); }
+      catch (e) { readError = e; }
+      if (readError) {
+        if (opts.silent) { syncFlash('No se pudo leer el archivo de sincronización; no se escribió nada.'); return; }
+        if (!confirm('No se pudo leer el archivo de sincronización (' + readError.message + ').\n\n¿Sobrescribirlo con los datos de este dispositivo?')) return;
+        remote = null;
+      }
+      const merged = mergeData(local, remote || { days: [], tombstones: {} });
+      if (merged.changedLocal) {
+        await replaceDays(merged.days);
+        await replaceTombstones(merged.tombstones);
+        if (day) await showDay(cur);
+        if (view === 'month') renderCal();
+        notifyChange();
+      }
+      if (merged.changedRemote || !remote) {
+        await writeSyncFile(syncHandle, makeRemote(merged.days, merged.tombstones));
+      }
+      syncLast = new Date().toISOString();
+      await putMeta('syncLast', syncLast);
+      renderSync();
+      syncFlash(merged.changedLocal ? 'Sincronizado · cambios traídos' : 'Sincronizado · sin cambios');
+    };
+    if (navigator.locks && navigator.locks.request) await navigator.locks.request('agenda-sync', run);
+    else await run();
+  } catch (e) {
+    syncFlash('Error de sincronización: ' + ((e && e.message) || e));
+  } finally {
+    syncBusy = false;
+  }
+}
+
+async function chooseSync() {
+  try {
+    const handle = await pickSyncFile();
+    if (!handle) return;
+    if (!(await ensurePermission(handle, true))) { syncFlash('Permiso denegado por el navegador.'); return; }
+    syncHandle = handle;
+    syncFileName = handle.name || 'agenda-sync.json';
+    await putMeta('syncHandle', handle);
+    renderSync();
+    await syncNow({ silent: false });
+  } catch (e) {
+    if (e && e.name === 'AbortError') return;
+    syncFlash('No se pudo configurar: ' + ((e && e.message) || e));
+  }
+}
+
+async function forgetSync() {
+  if (!confirm('¿Desconectar la sincronización?\n\nLos datos se quedan en este dispositivo y en el archivo. Podrás volver a conectarlo cuando quieras.')) return;
+  syncHandle = null; syncFileName = ''; syncLast = null;
+  await deleteMeta('syncHandle'); await deleteMeta('syncLast');
+  renderSync();
+}
+
 const MAX_BACKUPS = 10;
 
 async function makeBackup() {
@@ -202,6 +327,7 @@ async function restoreBackup(ts) {
   await makeBackup();
   await replaceDays(b.data || []);
   notifyChange();
+  scheduleSync();
   alert('Copia restaurada.');
   await showDay(cur);
   await renderBackups();
@@ -330,6 +456,9 @@ function wire() {
   $('#set-dark').onchange = (e) => { settings.dark = e.target.checked; saveSettings(); applySettings(); };
   $('#set-firstday').onchange = (e) => { settings.firstDay = Number(e.target.value); saveSettings(); };
   const sn = $('#set-notify'); if (sn) sn.onchange = onNotifyToggle;
+  const sCh = $('#sync-choose'); if (sCh) sCh.onclick = chooseSync;
+  const sNow = $('#sync-now'); if (sNow) sNow.onclick = () => syncNow({ silent: false });
+  const sOff = $('#sync-off'); if (sOff) sOff.onclick = forgetSync;
 
   $('#btn-acerca').onclick = openAcerca;
   $('#btn-acerca-2').onclick = openAcerca;
@@ -573,12 +702,15 @@ async function doImport(mode) {
   notifyChange();
   await showDay(cur);
   flash('Importados ' + days.length + ' días (' + (mode === 'replace' ? 'reemplazando' : 'fusionando') + ')');
+  scheduleSync();
   pendingImport = null;
 }
 
 async function deleteAll() {
   if (!confirm('¿Seguro que quieres borrar todos los datos de esta agenda?\n\nEsta acción no puede deshacerse.')) return;
   await makeBackup();          // guarda una copia antes de borrar (recuperable)
+  const keys = await allKeys();
+  for (const k of keys) await putTombstone(k);   // que el borrado se propague en la sincronización
   await clearAll();
   dirty = false;
   notifyChange();
